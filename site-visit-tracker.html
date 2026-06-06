@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildTrack — Contractor Site Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Nunito+Sans:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --ink: #111827;
+  --card: #fff;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --surface: #f9fafb;
+  --accent: #f59e0b;
+  --accent2: #0ea5e9;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warn: #f97316;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* ── HEADER ── */
+.app-header{
+  background:var(--ink);
+  padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:54px;flex-shrink:0;
+  border-bottom:3px solid var(--accent);
+  position:relative;z-index:20;
+}
+.logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);}
+.logo span{color:#fff;}
+.header-right{display:flex;align-items:center;gap:10px;}
+
+/* ── STATION TABS ── */
+.station-tabs{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  display:flex;align-items:center;gap:6px;
+  flex-shrink:0;overflow-x:auto;
+  scrollbar-width:none;
+}
+.station-tabs::-webkit-scrollbar{display:none;}
+.station-tab{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 18px;
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  white-space:nowrap;
+  transition:all .15s;
+  color:var(--muted);
+  font-weight:700;font-size:13px;
+}
+.station-tab:hover{color:var(--ink);background:var(--surface);}
+.station-tab.active{color:var(--ink);border-bottom-color:var(--accent);}
+.station-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.station-pct{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--surface);}
+
+/* ── NAV TABS ── */
+.nav-tabs{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  display:flex;gap:0;flex-shrink:0;
+}
+.nav-tab{
+  padding:8px 16px;font-size:12px;font-weight:700;
+  letter-spacing:.5px;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .12s;
+}
+.nav-tab:hover{color:var(--ink);}
+.nav-tab.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;overflow-y:auto;padding:20px 24px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── STATS STRIP ── */
+.stats-strip{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:12px;margin-bottom:20px;
+}
+.stat-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;
+  border-top:3px solid transparent;
+  cursor:pointer;transition:all .15s;
+}
+.stat-box:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-1px);}
+.stat-box.active-stat{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px);}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* ── OVERALL PROGRESS ── */
+.overall-bar-wrap{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px 20px;margin-bottom:20px;
+  display:flex;align-items:center;gap:20px;
+}
+.overall-bar-label{font-weight:700;font-size:13px;white-space:nowrap;}
+.overall-bar-track{flex:1;height:10px;background:#e5e7eb;border-radius:10px;overflow:hidden;}
+.overall-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .4s;}
+.overall-bar-pct{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent2);white-space:nowrap;}
+
+/* ── ACTIVITY LIST ── */
+.activity-list{display:flex;flex-direction:column;gap:0;}
+.activity-item{
+  background:var(--card);border:1px solid var(--border);
+  border-left:4px solid transparent;
+  display:grid;grid-template-columns:1fr auto auto auto;
+  align-items:center;gap:12px;
+  padding:14px 16px;
+  transition:all .15s;
+  margin-bottom:6px;border-radius:8px;
+}
+.activity-item:hover{border-color:var(--border);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.activity-item.status-done{border-left-color:#22c55e;background:#f0fdf4;}
+.activity-item.status-inprogress{border-left-color:#f59e0b;background:#fffbeb;}
+.activity-item.status-onhold{border-left-color:#ef4444;background:#fff7f7;}
+.activity-item.status-notstarted{border-left-color:#d1d5db;}
+
+.act-info{}
+.act-name{font-weight:700;font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:6px;}
+.act-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.act-cat{background:var(--surface);border:1px solid var(--border);padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;}
+.act-notes{font-size:11px;color:var(--muted);margin-top:3px;}
+.act-completion{font-size:11px;color:#16a34a;margin-top:2px;}
+
+.act-pct-col{text-align:center;min-width:80px;}
+.act-pct-ring{
+  width:52px;height:52px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+  position:relative;margin:0 auto;
+}
+.act-pct-text{position:relative;z-index:1;}
+
+.act-status-col{min-width:120px;}
+.status-select{
+  width:100%;padding:7px 10px;
+  border:2px solid var(--border);border-radius:6px;
+  font-family:'Nunito Sans',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;background:white;transition:border-color .12s;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b7280' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;
+  padding-right:28px;
+}
+.status-select.s-done{border-color:#22c55e;color:#15803d;background-color:#f0fdf4;}
+.status-select.s-inprogress{border-color:#f59e0b;color:#92400e;background-color:#fffbeb;}
+.status-select.s-onhold{border-color:#ef4444;color:#991b1b;background-color:#fff7f7;}
+.status-select.s-notstarted{border-color:#d1d5db;color:#6b7280;}
+.status-select:focus{outline:none;}
+
+.act-btn-col{min-width:36px;}
+.act-edit-btn{
+  background:none;border:1.5px solid var(--border);
+  width:34px;height:34px;border-radius:6px;
+  cursor:pointer;font-size:14px;transition:all .12s;
+  display:flex;align-items:center;justify-content:center;
+}
+.act-edit-btn:hover{background:var(--ink);color:white;border-color:var(--ink);}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+.b-green{background:#dcfce7;color:#166534;}
+.b-amber{background:#fef3c7;color:#92400e;}
+.b-red{background:#fee2e2;color:#991b1b;}
+.b-blue{background:#dbeafe;color:#1d4ed8;}
+.b-gray{background:#f3f4f6;color:#374151;}
+.b-purple{background:#ede9fe;color:#6d28d9;}
+
+/* ── SECTION HEADER ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-hd h2{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 16px;border:none;border-radius:6px;font-family:'Nunito Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:5px;}
+.btn-amber{background:var(--accent);color:#1a1a1a;}
+.btn-amber:hover{background:#d97706;}
+.btn-blue{background:var(--accent2);color:white;}
+.btn-blue:hover{background:#0284c7;}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--border);}
+.btn-ghost:hover{background:var(--surface);}
+.btn-danger{background:var(--danger);color:white;}
+.btn-sm{padding:5px 12px;font-size:11px;}
+.btn-success{background:var(--success);color:white;}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px;}
+.overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:12px;width:560px;max-width:100%;max-height:92vh;overflow-y:auto;animation:pop .18s ease;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+@keyframes pop{from{transform:scale(.96) translateY(8px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+.modal-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:1;}
+.modal-hd h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);}
+.modal-close:hover{color:var(--ink);}
+.modal-body{padding:20px;}
+.modal-ft{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+/* ── FORM ── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.fg label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;font-family:'Nunito Sans',sans-serif;font-size:13px;background:white;color:var(--ink);transition:border-color .12s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent2);}
+.fg textarea{resize:vertical;min-height:70px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* ── DAILY LOG CARD ── */
+.log-card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;}
+.log-card-hd{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.log-card-hd:hover{background:var(--surface);}
+.log-body{padding:14px 16px;border-top:1px solid var(--border);display:none;}
+.log-body.open{display:block;}
+.log-field{margin-bottom:10px;}
+.log-field-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.log-field-label.green{color:#16a34a;}
+.log-field-label.red{color:var(--danger);}
+.log-field-label.blue{color:var(--accent2);}
+.log-field-label.amber{color:#d97706;}
+.log-text{font-size:13px;line-height:1.6;color:#374151;}
+
+/* ── LABOUR TABLE ── */
+.t{width:100%;border-collapse:collapse;font-size:13px;}
+.t th{text-align:left;padding:8px 12px;background:var(--ink);color:#e5e7eb;font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:700;}
+.t td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.t tr:last-child td{border-bottom:none;}
+.t tr:hover td{background:var(--surface);}
+
+/* ── LABOUR ROW ── */
+.labour-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr auto;gap:8px;align-items:center;background:var(--surface);padding:8px 10px;border-radius:6px;border:1px solid var(--border);margin-bottom:6px;}
+.labour-row input,.labour-row select{padding:6px 8px;border:1.5px solid var(--border);border-radius:5px;font-size:12px;font-family:'Nunito Sans',sans-serif;background:white;}
+
+/* ── INSTRUCTION CARD ── */
+.instr-card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;}
+.instr-card-hd{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;}
+
+/* ── REPORT ── */
+.report-wrap{background:white;border:1px solid var(--border);border-radius:10px;padding:28px;max-width:820px;}
+.rep-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:18px;}
+.rep-co{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;}
+.rep-co span{color:var(--accent);}
+.rep-meta{text-align:right;font-size:12px;color:var(--muted);line-height:1.9;}
+.rep-h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent2);margin:16px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;font-size:12px;margin-bottom:8px;}
+.rep-grid strong{color:var(--muted);font-weight:600;margin-right:4px;}
+.prog-wrap{margin:5px 0;}
+.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;font-weight:600;}
+.prog-bar{height:7px;background:#e5e7eb;border-radius:10px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:10px;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:#9ca3af;}
+.empty-ico{font-size:36px;margin-bottom:8px;}
+
+/* ── PRINT ── */
+@media print{
+  .app-header,.station-tabs,.nav-tabs,.btn,.overlay{display:none!important;}
+  body{overflow:visible;height:auto;}
+  .main-content{overflow:visible;}
+  .page{display:none!important;}
+  #page-report{display:block!important;}
+}
+@media(max-width:700px){
+  .stats-strip{grid-template-columns:repeat(3,1fr);}
+  .activity-item{grid-template-columns:1fr auto;}
+  .act-pct-col,.act-btn-col{display:none;}
+  .act-status-col{min-width:100px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="app-header">
+  <div class="logo">Build<span>Track</span></div>
+  <div class="header-right">
+    <span id="sync-status" style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:.5px;">● Live</span>
+    <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:#374151;" onclick="openProjectSetup()">⚙ Project Info</button>
+    <button class="btn btn-amber btn-sm" onclick="openNewLog()">+ Daily Log</button>
+  </div>
+</div>
+
+<!-- ══ STATION TABS ══ -->
+<div class="station-tabs" id="station-tabs"></div>
+
+<!-- ══ NAV TABS ══ -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="goPage('activities',this)">📋 Activities</div>
+  <div class="nav-tab" onclick="goPage('daily',this)">🗓 Daily Log</div>
+  <div class="nav-tab" onclick="goPage('labour',this)">👷 Labour</div>
+  <div class="nav-tab" onclick="goPage('instructions',this)">📌 Instructions</div>
+  <div class="nav-tab" onclick="goPage('report',this)">📄 Report</div>
+</div>
+
+<!-- ══ CONTENT ══ -->
+<div class="main-content">
+
+  <!-- ACTIVITIES PAGE -->
+  <div class="page active" id="page-activities">
+
+    <!-- Stats Strip -->
+    <div class="stats-strip" id="stats-strip"></div>
+
+    <!-- Overall Progress Bar -->
+    <div class="overall-bar-wrap">
+      <div class="overall-bar-label" id="bar-site-name">—</div>
+      <div class="overall-bar-track"><div class="overall-bar-fill" id="overall-bar-fill" style="width:0%"></div></div>
+      <div class="overall-bar-pct" id="overall-bar-pct">0%</div>
+    </div>
+
+    <!-- Activity List Header -->
+    <div class="sec-hd">
+      <h2 id="act-list-label">All Activities</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="filterActs('all')" id="af-all" style="border-color:var(--accent2);color:var(--accent2);">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterActs('notstarted')" id="af-notstarted">Not Started</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterActs('inprogress')" id="af-inprogress">In Progress</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterActs('done')" id="af-done">Completed</button>
+      </div>
+    </div>
+
+    <!-- Activity Items -->
+    <div id="activity-list"></div>
+  </div>
+
+  <!-- DAILY LOG PAGE -->
+  <div class="page" id="page-daily">
+    <div class="sec-hd">
+      <h2>Daily Site Log</h2>
+      <button class="btn btn-amber btn-sm" onclick="openNewLog()">+ New Entry</button>
+    </div>
+    <div id="daily-list"></div>
+  </div>
+
+  <!-- LABOUR PAGE -->
+  <div class="page" id="page-labour">
+    <div class="sec-hd">
+      <h2>Labour & Crew Register</h2>
+      <button class="btn btn-blue btn-sm" onclick="openAddLabour()">+ Add Worker</button>
+    </div>
+    <div id="labour-wrap"></div>
+  </div>
+
+  <!-- INSTRUCTIONS PAGE -->
+  <div class="page" id="page-instructions">
+    <div class="sec-hd">
+      <h2>Engineer Instructions</h2>
+      <button class="btn btn-amber btn-sm" onclick="openAddInstruction()">+ Log Instruction</button>
+    </div>
+    <div id="instr-list"></div>
+  </div>
+
+  <!-- REPORT PAGE -->
+  <div class="page" id="page-report">
+    <div class="sec-hd">
+      <h2>Site Report</h2>
+      <button class="btn btn-ghost btn-sm" onclick="window.print()">⎙ Print / PDF</button>
+    </div>
+    <div id="report-content"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Update Activity ══ -->
+<div class="overlay" id="modal-act">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="act-modal-title">Update Activity</h3>
+      <button class="modal-close" onclick="closeModal('modal-act')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg"><label>Activity Name</label><input type="text" id="a-name" placeholder="Activity name"></div>
+      <div class="fg2">
+        <div class="fg">
+          <label>Status</label>
+          <select id="a-status" onchange="onActStatusChange()">
+            <option value="notstarted">⬜ Not Started</option>
+            <option value="inprogress">🔄 In Progress</option>
+            <option value="done">✅ Completed</option>
+            <option value="onhold">🔴 On Hold</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>% Complete</label>
+          <input type="number" id="a-pct" min="0" max="100" value="0" oninput="onActPctInput()">
+        </div>
+        <div class="fg">
+          <label>Date Started</label>
+          <input type="date" id="a-startdate">
+        </div>
+        <div class="fg">
+          <label>Date Completed</label>
+          <input type="date" id="a-enddate">
+        </div>
+      </div>
+      <div class="fg"><label>Scope / BoQ Reference</label><textarea id="a-notes" style="min-height:55px;"></textarea></div>
+      <div class="fg"><label>✅ Completion Remarks</label><textarea id="a-completion" placeholder="How was it done? Variations, quality notes, who signed off..."></textarea></div>
+      <div class="fg"><label>⚠ Blockers / Issues</label><textarea id="a-blockers" style="min-height:55px;" placeholder="Anything delaying or affecting this work item..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-act')">Cancel</button>
+      <button class="btn btn-amber" onclick="saveActivity()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Daily Log ══ -->
+<div class="overlay" id="modal-log">
+  <div class="modal" style="width:700px;">
+    <div class="modal-hd">
+      <h3 id="log-modal-title">New Daily Site Log</h3>
+      <button class="modal-close" onclick="closeModal('modal-log')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg2">
+        <div class="fg"><label>Date</label><input type="date" id="l-date"></div>
+        <div class="fg"><label>Weather</label>
+          <select id="l-weather">
+            <option>Clear / Sunny</option><option>Partly Cloudy</option>
+            <option>Overcast</option><option>Light Rain</option>
+            <option>Heavy Rain</option><option>Very Hot</option>
+          </select>
+        </div>
+        <div class="fg"><label>Supervisor</label><input type="text" id="l-supervisor" placeholder="Your name / foreman"></div>
+        <div class="fg"><label>Site Status</label>
+          <select id="l-status">
+            <option value="ok">On Schedule</option>
+            <option value="warn">Slight Delay</option>
+            <option value="issue">Delayed / Stopped</option>
+            <option value="pending">Awaiting Instruction</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>✅ Work Done Today</label><textarea id="l-workdone" placeholder="Describe all work carried out by your crew today..."></textarea></div>
+      <div class="fg"><label>📦 Materials Delivered / Used</label><textarea id="l-materials" placeholder="e.g. 5 bags cement, 2 tonnes sand..." style="min-height:55px;"></textarea></div>
+      <div class="fg"><label>🔴 Problems / Challenges</label><textarea id="l-problems" placeholder="Blockages, shortages, equipment failures..." style="min-height:55px;"></textarea></div>
+      <div class="fg"><label>📌 Instructions Received</label><textarea id="l-instructions" placeholder="Verbal or written instructions received today..." style="min-height:55px;"></textarea></div>
+      <div class="fg"><label>🏗 Plant & Equipment on Site</label><textarea id="l-plant" placeholder="e.g. concrete mixer, vibrator, compactor..." style="min-height:50px;"></textarea></div>
+      <div class="fg"><label>📅 Plan for Tomorrow</label><textarea id="l-tomorrow" placeholder="Work planned for next day..." style="min-height:50px;"></textarea></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Labour Attendance</div>
+        <button class="btn btn-ghost btn-sm" onclick="addLabourRow()">+ Row</button>
+      </div>
+      <div id="log-labour-hd" style="display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr auto;gap:8px;padding:0 10px;margin-bottom:4px;">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Trade</span>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Name</span>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">No.</span>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Hours</span>
+        <span></span>
+      </div>
+      <div id="log-labour-rows"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-log')">Cancel</button>
+      <button class="btn btn-amber" onclick="saveLog()">Save Log</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add Labour ══ -->
+<div class="overlay" id="modal-labour">
+  <div class="modal" style="width:440px;">
+    <div class="modal-hd"><h3>Add Worker</h3><button class="modal-close" onclick="closeModal('modal-labour')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Full Name</label><input type="text" id="lb-name" placeholder="Worker name"></div>
+      <div class="fg2">
+        <div class="fg"><label>Trade / Role</label>
+          <select id="lb-trade">
+            <option>Foreman</option><option>Mason / Bricklayer</option><option>Carpenter</option>
+            <option>Steel Fixer</option><option>Plumber</option><option>Electrician</option>
+            <option>Welder / Fabricator</option><option>Painter</option><option>Tiler</option>
+            <option>Labourer</option><option>Driver / Plant Operator</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Employment Type</label>
+          <select id="lb-type">
+            <option>Own Crew (Direct)</option><option>Subcontractor</option><option>Casual / Daily</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Phone</label><input type="text" id="lb-phone" placeholder="Phone number"></div>
+      <div class="fg"><label>Notes</label><textarea id="lb-notes" style="min-height:55px;" placeholder="Skills, certifications..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-labour')">Cancel</button>
+      <button class="btn btn-amber" onclick="saveLabour()">Add Worker</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Instruction ══ -->
+<div class="overlay" id="modal-instr">
+  <div class="modal" style="width:500px;">
+    <div class="modal-hd"><h3>Log Engineer Instruction</h3><button class="modal-close" onclick="closeModal('modal-instr')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg2">
+        <div class="fg"><label>Date Received</label><input type="date" id="i-date"></div>
+        <div class="fg"><label>From</label><input type="text" id="i-from" placeholder="Engineer / consultant name"></div>
+        <div class="fg"><label>Type</label>
+          <select id="i-type">
+            <option>Verbal Instruction</option><option>Written Instruction (EI)</option>
+            <option>Drawing Revision</option><option>Variation Order</option>
+            <option>Clarification</option><option>Stop-Work Notice</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Status</label>
+          <select id="i-status">
+            <option value="open">Open — Action Required</option>
+            <option value="progress">In Progress</option>
+            <option value="done">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Instruction Description</label><textarea id="i-desc" placeholder="What was instructed..." style="min-height:80px;"></textarea></div>
+      <div class="fg"><label>Action Taken / Response</label><textarea id="i-action" placeholder="What you did or what is pending..." style="min-height:60px;"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-instr')">Cancel</button>
+      <button class="btn btn-amber" onclick="saveInstruction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Project Info ══ -->
+<div class="overlay" id="modal-project">
+  <div class="modal" style="width:500px;">
+    <div class="modal-hd"><h3>Project / Contract Info</h3><button class="modal-close" onclick="closeModal('modal-project')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Your Company Name</label><input type="text" id="p-company" placeholder="Contracting company name"></div>
+      <div class="fg"><label>Project Name</label><input type="text" id="p-name"></div>
+      <div class="fg2">
+        <div class="fg"><label>Client / Employer</label><input type="text" id="p-client"></div>
+        <div class="fg"><label>Consulting Engineer</label><input type="text" id="p-engineer" placeholder="Consultant / RE name"></div>
+        <div class="fg"><label>Contract Start</label><input type="date" id="p-start"></div>
+        <div class="fg"><label>Planned Completion</label><input type="date" id="p-end"></div>
+      </div>
+      <div class="fg"><label>Contract Sum (USHS)</label><input type="text" id="p-sum" placeholder="e.g. 45,000,000"></div>
+      <div class="fg"><label>Site Foreman</label><input type="text" id="p-foreman"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-project')">Cancel</button>
+      <button class="btn btn-amber" onclick="saveProject()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// SITE DEFINITIONS
+// ════════════════════════════════════════
+const SITE_DEFS = {
+  ndeeba:{
+    name:'TE Ndeeba Mbawo',sub:'Additional Civil Works',
+    color:'#f59e0b',location:'Ndeeba, Kampala',
+    defaultProject:{company:'',name:'TE Ndeeba Mbawo – Additional Civil Works',client:'TotalEnergies Uganda Ltd',engineer:'',location:'Ndeeba, Kampala',start:'',end:'',sum:'',foreman:''},
+    defaultWorks:[
+      {id:'n1',name:'Preliminaries / Mobilisation',cat:'Other',pct:0,status:'notstarted',notes:'HSE requirements, local council approvals'},
+      {id:'n2',name:'Exit Drainage Channel',cat:'External Works',pct:0,status:'notstarted',notes:'Channel clearance, demolition, C25 concrete walls, MS grating — 12–23 Lm'},
+      {id:'n3',name:'Bollards at Totem Area',cat:'External Works',pct:0,status:'notstarted',notes:'10 No. 100mm dia hollow pipe bollards cast in concrete, painted'},
+      {id:'n4',name:'Hump Signage & Bollard Repairs',cat:'External Works',pct:0,status:'notstarted',notes:'Realign hump signage, straighten bent bollards, fabricate fire assembly point sign'},
+      {id:'n5',name:'Canopy Cladding & Painting',cat:'Superstructure',pct:0,status:'notstarted',notes:'Remove/reinstall electrical & signage; install cladding 18 Lm; painting 26.2 Sm per TEMUL standards'},
+      {id:'n6',name:'Interceptor Covers (5 No.)',cat:'External Works',pct:0,status:'notstarted',notes:'Demolish corroded covers; supply & install 500×500mm MS angle/SHS/chequered plate covers'},
+      {id:'n7',name:'Toilet Door, Tiles & Ceiling',cat:'Plastering / Finishes',pct:0,status:'notstarted',notes:'MS louvered door D6 900×2500mm; hack & re-tile walls 25 Sm; Celotex suspended ceiling 40 Sm'},
+      {id:'n8',name:'Toilet Fitments (WC, WHB, Urinal)',cat:'Plumbing',pct:0,status:'notstarted',notes:'Squatting WC ×2; pillar tap WHB; urinal demolition & terrazzo channel 7 Lm; PPR pipe 7 Lm; floor trap'},
+      {id:'n9',name:'Forecourt Pothole Repairs',cat:'Concrete Works',pct:0,status:'notstarted',notes:'150mm C25 concrete smooth finish 50 Sm — forecourt, entrance & exit channel'},
+    ]
+  },
+  kyengera:{
+    name:'TE Kyengera SS',sub:'Minor Works',
+    color:'#0ea5e9',location:'Kyengera, Kampala',
+    defaultProject:{company:'',name:'TE Kyengera SS – Minor Works',client:'TotalEnergies Uganda Ltd',engineer:'',location:'Kyengera, Kampala',start:'',end:'',sum:'',foreman:''},
+    defaultWorks:[
+      {id:'k1',name:'Preliminaries / Mobilisation',cat:'Other',pct:0,status:'notstarted',notes:'Staff, materials, safety to TOTAL HSE requirements'},
+      {id:'k2',name:'Security Light Poles (2 No.)',cat:'Electrical',pct:0,status:'notstarted',notes:'6m fabricated poles per TE standards; photocell; 2.5mm 4-core SWA cable 100 Lm; 15A breaker; two-gang switch'},
+      {id:'k3',name:'Cable Trench & ESD',cat:'Electrical',pct:0,status:'notstarted',notes:'Excavation 100 Lm; C30 reinstatement; ESD key type; grounding reel 700-50R 15.2m'},
+      {id:'k4',name:'Speed Hump',cat:'Concrete Works',pct:0,status:'notstarted',notes:'700mm wide × 120mm high reinforced concrete speed hump 5 Lm'},
+      {id:'k5',name:'KCCA Kiosk Demolition & Clearance',cat:'External Works',pct:0,status:'notstarted',notes:'Break out residual foundations; cart debris off-site per local regulations'},
+      {id:'k6',name:'Waste Oil Containment',cat:'Substructure',pct:0,status:'notstarted',notes:'7800×1650×1000mm high 150mm thick blockwork on 100mm slab; waterproof plaster; connect to interceptor'},
+      {id:'k7',name:'Perimeter Wall Reconstruction',cat:'Masonry / Blockwork',pct:0,status:'notstarted',notes:'Hollow concrete blockwork 2.5m high 45 Sm; primer + two finishing coats paint'},
+      {id:'k8',name:'CCTV Camera Installation',cat:'Electrical',pct:0,status:'notstarted',notes:'4G 4MP camera; 60W solar panel; 11.1V battery pack; 128GB card'},
+    ]
+  },
+  kabuusu:{
+    name:'TE Kabuusu',sub:'Civil Works',
+    color:'#22c55e',location:'Kabuusu, Kampala',
+    defaultProject:{company:'',name:'TE Kabuusu – Civil Works',client:'TotalEnergies Uganda Ltd',engineer:'',location:'Kabuusu, Kampala',start:'',end:'',sum:'',foreman:''},
+    defaultWorks:[
+      {id:'kb1',name:'Preliminaries / Mobilisation',cat:'Other',pct:0,status:'notstarted',notes:'HSE mobilisation, TotalEnergies Uganda Ltd requirements'},
+      {id:'kb2',name:"Manager's Office — Wall Rebuild",cat:'Masonry / Blockwork',pct:0,status:'notstarted',notes:'Demolish damaged wall 1 Sm; reconstruct hollow concrete blocks; plaster & paint per TEMUL colour spec'},
+      {id:'kb3',name:"Manager's Office — Al Door & Window",cat:'Doors & Windows',pct:0,status:'notstarted',notes:'Powder coated Al door D1 900×2500mm + fixed window W1 1000×1500mm with 6.5mm tinted glass'},
+      {id:'kb4',name:'Burglar Proofing & Painting',cat:'Superstructure',pct:0,status:'notstarted',notes:'25×25×3mm SHS burglar proofing 5 Sm; painting RAL 9010 white 50 Sm'},
+      {id:'kb5',name:'Earth Reel — Offloading Point',cat:'Electrical',pct:0,status:'notstarted',notes:'RAASM 735131.60141 truck earth grounding reel; 6mm² copper; 14.5m'},
+      {id:'kb6',name:'Dipping Pipe Covers (PMS & AGO)',cat:'Other',pct:0,status:'notstarted',notes:'2 No. chemically resistant sealed covers to storage tank dipping pipes'},
+      {id:'kb7',name:'New Pump Guard',cat:'Concrete Works',pct:0,status:'notstarted',notes:'Demolish old guard; construct new: concrete block + natural stone masonry; RAL 7006 paint; red reflecting band'},
+      {id:'kb8',name:'New Open Drainage Channel (10m)',cat:'External Works',pct:0,status:'notstarted',notes:'Excavate; C20 base 0.8 Cm; T12@200mm both ways 48.84 kg; C25 walls 3 Cm; MS grating 400mm wide 10 Lm'},
+      {id:'kb9',name:'Tank Farm Manhole Replaster',cat:'Substructure',pct:0,status:'notstarted',notes:'Hack off existing plaster 12 Sm; 1:1 cement-sand with Sika; refix 4 covers'},
+      {id:'kb10',name:'Forecourt Pothole Repairs',cat:'External Works',pct:0,status:'notstarted',notes:'Cut out 200mm deep 10 Cm; 7% lime stabilised sub-base 10 Cm; 25mm asphalt patches 50 Sm'},
+      {id:'kb11',name:'Bonjour Stone Cladding Removal',cat:'Plastering / Finishes',pct:0,status:'notstarted',notes:'Demolish stone/plastic cladding 33 Sm; plaster & paint RAL 7006 grey teak'},
+      {id:'kb12',name:'Fascia & Roof Leakage Repairs',cat:'Roofing',pct:0,status:'notstarted',notes:'MS plate fascia 1200mm high 10 Lm; Scaflex-C compound 112 Sm; gutter cleaning & unblock downpipe 18 Lm'},
+      {id:'kb13',name:'Speed Humps',cat:'Concrete Works',pct:0,status:'notstarted',notes:'Demolish existing 26 Lm; construct new RC 700×120mm 39 Lm'},
+      {id:'kb14',name:'Toilet Door, Cistern & Manhole Cover',cat:'Plumbing',pct:0,status:'notstarted',notes:'Louvered door D6 900×2500mm changing room; new cistern; 800×800×8mm steel manhole cover at Bonjour veranda'},
+      {id:'kb15',name:'CCTV Camera',cat:'Electrical',pct:0,status:'notstarted',notes:'4G 4MP camera; 60W solar; 11.1V battery; 128GB card'},
+      {id:'kb16',name:'Spreader Decommissioning',cat:'Other',pct:0,status:'notstarted',notes:'Decommission TE signage Island 3; deliver to 7th Street depot'},
+    ]
+  },
+  mpigi:{
+    name:'RUBiS Mpigi-Nakirebe',sub:'Rebrand & Associated Civil Works',
+    color:'#8b5cf6',location:'Mpigi-Nakirebe, Uganda',
+    defaultProject:{company:'',name:'RUBiS Mpigi-Nakirebe – Rebrand & Civil Works',client:'RUBiS Energy Uganda Ltd',engineer:'',location:'Mpigi-Nakirebe, Uganda',start:'',end:'',sum:'',foreman:''},
+    defaultWorks:[
+      {id:'mp1',name:'Preliminaries & General Items',cat:'Other',pct:0,status:'notstarted',notes:'Mobilisation, HSSE hoarding, permits & approvals, insurances, material tests'},
+      {id:'mp2',name:'Station Building — Demolitions & Alterations',cat:'Superstructure',pct:0,status:'notstarted',notes:'Safe demolition of walls for window/door alterations 10 Sm; structural alterations for Enjoy shop front'},
+      {id:'mp3',name:'Station Building — Walling & Reconstruction',cat:'Masonry / Blockwork',pct:0,status:'notstarted',notes:'200mm superstructure block walls 79.45 Sm (shop WCs); 150mm hollow clay partition 10 Sm; 300×200mm ring beam 25.3 Lm C25/30'},
+      {id:'mp4',name:'Station Building — Roofing & Drainage',cat:'Roofing',pct:0,status:'notstarted',notes:'Seal leaking points: shop store, service bay, power room, manager\'s office; replace damaged sheets; reinstate all rain water goods'},
+      {id:'mp5',name:'Station Building — Doors & Windows',cat:'Doors & Windows',pct:0,status:'notstarted',notes:'Spray-paint existing Al windows RAL 9010; 2 No. fixed shop-front 3100×2400mm; 4 No. casement WC 900×900mm; 1 No. store 1500mm wide'},
+      {id:'mp6',name:'Station Building — Wall & Floor Finishes',cat:'Plastering / Finishes',pct:0,status:'notstarted',notes:'Plaster, screed, tile & paint all affected areas per RUBiS finishes schedule; urinal channel reinstatement'},
+      {id:'mp7',name:'Station Building — Sanitary Fitments',cat:'Plumbing',pct:0,status:'notstarted',notes:'2 No. Roca Chic urinal bowls; 2 No. WHB with mirror & soap dispenser; 2 No. sitting WC Roca; new cisterns on external WCs'},
+      {id:'mp8',name:'Canopy — Roof Repairs & Sealing',cat:'Roofing',pct:0,status:'notstarted',notes:'Assess & seal leaking points; column cladding modifications to 400mm square box in 3mm MS plates'},
+      {id:'mp9',name:'Canopy — Gutter & Downpipes',cat:'Roofing',pct:0,status:'notstarted',notes:'Remove existing MS gutter; install 2mm GI plate gutter girth 1200mm; 75mm HDPVC downpipes with accessories'},
+      {id:'mp10',name:'External Works — Forecourt Drainage',cat:'External Works',pct:0,status:'notstarted',notes:'Reconstruct collapsed stone masonry channel; repair 3 No. manholes 600mm sq with HD grated covers; empty & modify oil interceptor'},
+      {id:'mp11',name:'External Works — Forecourt Surfacing',cat:'External Works',pct:0,status:'notstarted',notes:'Relay sunken pavers 20 Sm; new M40 pavers exit side 308 Sm; demolish failed concrete 12 Sm; cast 200mm C30/35 with A142 BRC mesh 12 Sm; asphalt patch'},
+      {id:'mp12',name:'Tank Farm — Integrity & Calibration',cat:'Substructure',pct:0,status:'notstarted',notes:'Acoustic tank testing PS 8.8M (nominated sub); calibration of 2 tanks PMS/AGO PS 11.5M; new 900mm composite manhole cover 40T'},
+      {id:'mp13',name:'External Works — Landscaping & Bollards',cat:'External Works',pct:0,status:'notstarted',notes:'18 No. 100×3mm CHS bollards 900mm above FGL in concrete; heavy duty chain 23 Lm; reconstruct failed kerbs D-area; plant grass & shrubs'},
+      {id:'mp14',name:'External Works — Sleeves & Ducts',cat:'External Works',pct:0,status:'notstarted',notes:'Cut & reinstate trench 600×600mm deep 50 Lm; lay 100mm HDPVC twin pipes 10 Lm; 4 No. inspection chambers 400mm sq'},
+      {id:'mp15',name:'Electrical — Audit & Minor Upgrades',cat:'Electrical',pct:0,status:'notstarted',notes:'Independent electrical audit PS 5M; minor electrical upgrades upon approval PS 10M'},
+      {id:'mp16',name:'Electrical — Lighting & Power',cat:'Electrical',pct:0,status:'notstarted',notes:'12 No. 150W LED under-canopy lights; 4 No. 200W flood security lights; 6 No. 30W linear LED fittings; 4 No. security poles to 6m; shop DB 3-phase 6-way; photocell'},
+      {id:'mp17',name:'Electrical — Fire Alarm & FASD',cat:'Electrical',pct:0,status:'notstarted',notes:'2-zone fire alarm panel; 10 call points; 1 manual call point (break glass); 6 smoke detectors'},
+      {id:'mp18',name:'Plumbing — Pipe Work & ICs',cat:'Plumbing',pct:0,status:'notstarted',notes:'100mm HDPVC drainage 20 Lm; 50mm piping 10 Lm; 4 No. floor traps; PPR 25mm 30 Lm; 3 No. MH/ICs; septic tank connection; water supply 15m lead'},
+      {id:'mp19',name:'Shop Interior — Walling & Structure',cat:'Masonry / Blockwork',pct:0,status:'notstarted',notes:'150mm partition walling 13.62 Sm; steel planter frame; Al frameless double swing door 1800×2400mm; sliding door 2100mm'},
+      {id:'mp20',name:'Shop Interior — Finishes',cat:'Plastering / Finishes',pct:0,status:'notstarted',notes:'25mm floor screed + approved tiles 49 Sm; skirting 40 Lm; wall plaster 27.24 Sm + wall tiles 76.32 Sm; gypsum ceiling 69.16 Sm with paint'},
+      {id:'mp21',name:'Shop Interior — Joinery & Counter Fitout',cat:'Plastering / Finishes',pct:0,status:'notstarted',notes:'Front pay-point counter black melamine/Eezi Quartz 2500mm; back counter with mirror wall 2800mm; flower pot planters'},
+      {id:'mp22',name:'Shop Electricals — Cabling & Sockets',cat:'Electrical',pct:0,status:'notstarted',notes:'32A TP&N circuits; 10 No. 13A socket outlets; 30 No. lighting points; 4-zone fire alarm; 4 smoke detectors; 2 CCTV points; 12-way DB'},
+      {id:'mp23',name:'General Works & Painting',cat:'Plastering / Finishes',pct:0,status:'notstarted',notes:'General plaster on wear & tear 50 Sm; welding & alignments; drain cleaning; full-site painting 1200 Sm per RUBiS spec'},
+      {id:'mp24',name:'Branding & Signage',cat:'Other',pct:0,status:'notstarted',notes:'Full RUBiS rebranding: buildings, canopy, tanks, LPG cages, lube racks, pumps, safety signage; new ID sign, corner boxes & pump spreaders'},
+    ]
+  }
+};
+
+// ════════════════════════════════════════
+// FIREBASE REST API SETUP
+// No SDK needed — works from any file:// or http:// URL
+// ════════════════════════════════════════
+const FB_PROJECT = 'build-tracker-9bc79';
+const FB_API_KEY = 'AIzaSyDLxkWWaQnxHe-Mr0eRs7Wl941DRs_CqfE';
+const FB_BASE    = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents`;
+
+// ── Convert JS object → Firestore REST format ──
+function toFS(val) {
+  if (val === null || val === undefined) return { nullValue: null };
+  if (typeof val === 'boolean')          return { booleanValue: val };
+  if (typeof val === 'number')           return Number.isInteger(val) ? { integerValue: String(val) } : { doubleValue: val };
+  if (typeof val === 'string')           return { stringValue: val };
+  if (Array.isArray(val))                return { arrayValue: { values: val.map(toFS) } };
+  if (typeof val === 'object')           return { mapValue: { fields: Object.fromEntries(Object.entries(val).map(([k,v])=>[k,toFS(v)])) } };
+  return { stringValue: String(val) };
+}
+
+// ── Convert Firestore REST format → JS object ──
+function fromFS(fv) {
+  if (!fv) return null;
+  if ('nullValue'    in fv) return null;
+  if ('booleanValue' in fv) return fv.booleanValue;
+  if ('integerValue' in fv) return parseInt(fv.integerValue);
+  if ('doubleValue'  in fv) return fv.doubleValue;
+  if ('stringValue'  in fv) return fv.stringValue;
+  if ('arrayValue'   in fv) return (fv.arrayValue.values || []).map(fromFS);
+  if ('mapValue'     in fv) return Object.fromEntries(Object.entries(fv.mapValue.fields || {}).map(([k,v])=>[k,fromFS(v)]));
+  return null;
+}
+
+// ── GET document from Firestore ──
+async function fsGet(collection, docId) {
+  const url = `${FB_BASE}/${collection}/${docId}?key=${FB_API_KEY}`;
+  const res = await fetch(url);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Firestore GET failed: ${res.status}`);
+  const json = await res.json();
+  return Object.fromEntries(Object.entries(json.fields || {}).map(([k,v])=>[k,fromFS(v)]));
+}
+
+// ── PATCH (upsert) document in Firestore ──
+async function fsSet(collection, docId, data) {
+  const url = `${FB_BASE}/${collection}/${docId}?key=${FB_API_KEY}`;
+  const body = { fields: Object.fromEntries(Object.entries(data).map(([k,v])=>[k,toFS(v)])) };
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Firestore SET failed: ${res.status} — ${err}`);
+  }
+}
+
+// ── Sync status indicator ──
+function setSyncStatus(status) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    saving:  { text: '⏳ Saving…',    color: '#f59e0b' },
+    saved:   { text: '✓ Saved',       color: '#22c55e' },
+    error:   { text: '⚠ Offline',     color: '#ef4444' },
+    live:    { text: '● Live',         color: '#22c55e' },
+    loading: { text: '⏳ Loading…',   color: '#9ca3af' },
+  };
+  const s = map[status] || map.saved;
+  el.textContent = s.text;
+  el.style.color  = s.color;
+}
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+let activeSite = localStorage.getItem('bt_active') || 'ndeeba';
+let activeFilter = 'all';
+let editActId = null;
+let editLogId = null;
+let state = { project: null, works: [], logs: [], labour: [], instructions: [] };
+
+// ── Default / localStorage fallback for a site ──
+function defaultSiteData(k) {
+  const raw = localStorage.getItem('bt_' + k);
+  if (raw) { try { return JSON.parse(raw); } catch(e) {} }
+  const d = SITE_DEFS[k];
+  return { project: { ...d.defaultProject }, works: d.defaultWorks.map(w => ({ ...w })), logs: [], labour: [], instructions: [] };
+}
+
+// ── Save active site to Firestore + localStorage ──
+async function saveSite() {
+  setSyncStatus('saving');
+  const data = {
+    project:      state.project      || {},
+    works:        state.works        || [],
+    logs:         state.logs         || [],
+    labour:       state.labour       || [],
+    instructions: state.instructions || [],
+    updatedAt:    new Date().toISOString()
+  };
+  // always save locally first so work is never lost
+  localStorage.setItem('bt_' + activeSite, JSON.stringify(data));
+  try {
+    await fsSet('sites', activeSite, data);
+    setSyncStatus('saved');
+    setTimeout(() => setSyncStatus('live'), 1500);
+  } catch(e) {
+    console.warn('Firestore save failed, kept in localStorage:', e);
+    setSyncStatus('error');
+  }
+}
+
+// ── Load site: Firestore first, localStorage fallback ──
+async function loadSite(k) {
+  setSyncStatus('loading');
+  try {
+    const data = await fsGet('sites', k);
+    if (data) {
+      state.project      = data.project      || {};
+      state.works        = data.works        || [];
+      state.logs         = data.logs         || [];
+      state.labour       = data.labour       || [];
+      state.instructions = data.instructions || [];
+      // update localStorage cache
+      localStorage.setItem('bt_' + k, JSON.stringify(data));
+    } else {
+      // First time for this site — seed defaults
+      const def = defaultSiteData(k);
+      state.project = def.project; state.works = def.works;
+      state.logs = def.logs; state.labour = def.labour; state.instructions = def.instructions;
+      await saveSite(); // write defaults to Firestore
+    }
+    setSyncStatus('live');
+  } catch(e) {
+    console.warn('Firestore load failed, using localStorage:', e);
+    const def = defaultSiteData(k);
+    state.project = def.project; state.works = def.works;
+    state.logs = def.logs; state.labour = def.labour; state.instructions = def.instructions;
+    setSyncStatus('error');
+  }
+}
+
+// ── getSiteData used for station tab badges (reads localStorage cache) ──
+function getSiteData(k) {
+  const raw = localStorage.getItem('bt_' + k);
+  if (raw) { try { return JSON.parse(raw); } catch(e) {} }
+  return defaultSiteData(k);
+}
+
+async function switchSite(k) {
+  activeSite = k;
+  localStorage.setItem('bt_active', k);
+  activeFilter = 'all';
+  await loadSite(k);
+  renderStationTabs();
+  renderActivitiesPage();
+}
+
+// ════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════
+function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function statusLabel(s){return{notstarted:'Not Started',inprogress:'In Progress',done:'Completed',onhold:'On Hold'}[s]||s;}
+function statusColor(s){return{notstarted:'#9ca3af',inprogress:'#f59e0b',done:'#22c55e',onhold:'#ef4444'}[s]||'#9ca3af';}
+function avgPct(works){if(!works.length)return 0;return Math.round(works.reduce((s,w)=>s+w.pct,0)/works.length);}
+
+// ════════════════════════════════════════
+// NAV
+// ════════════════════════════════════════
+function goPage(page, el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-'+page).classList.add('active');
+  if(page==='activities') renderActivitiesPage();
+  if(page==='daily') renderDaily();
+  if(page==='labour') renderLabour();
+  if(page==='instructions') renderInstructions();
+  if(page==='report') renderReport();
+}
+
+// ════════════════════════════════════════
+// STATION TABS
+// ════════════════════════════════════════
+function renderStationTabs(){
+  const wrap = document.getElementById('station-tabs');
+  wrap.innerHTML = Object.keys(SITE_DEFS).map(k=>{
+    const def = SITE_DEFS[k];
+    const d = getSiteData(k);
+    const pct = avgPct(d.works);
+    const isActive = k===activeSite;
+    return `<div class="station-tab ${isActive?'active':''}" onclick="switchSite('${k}')" style="${isActive?'border-bottom-color:'+def.color:''}">
+      <div class="station-dot" style="background:${def.color};${isActive?'':'opacity:.4'}"></div>
+      <span>${def.name}</span>
+      <span class="station-pct" style="${isActive?'background:'+def.color+'22;color:'+def.color:''}">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// ACTIVITIES PAGE
+// ════════════════════════════════════════
+function renderActivitiesPage(){
+  renderStats();
+  renderActivityList();
+  // update topbar badge
+  const def = SITE_DEFS[activeSite];
+  document.getElementById('bar-site-name').textContent = def.name+' — '+def.sub;
+}
+
+function renderStats(){
+  const w = state.works;
+  const total = w.length;
+  const done = w.filter(x=>x.status==='done'||x.pct===100).length;
+  const inprog = w.filter(x=>x.status==='inprogress'||(x.pct>0&&x.pct<100&&x.status!=='done')).length;
+  const notstarted = w.filter(x=>(!x.status||x.status==='notstarted')&&x.pct===0).length;
+  const onhold = w.filter(x=>x.status==='onhold').length;
+  const pct = avgPct(w);
+  const def = SITE_DEFS[activeSite];
+
+  document.getElementById('stats-strip').innerHTML = [
+    {label:'Total Items',val:total,col:'#6b7280',f:'all',sub:'all activities'},
+    {label:'Completed',val:done,col:'#22c55e',f:'done',sub:`${total?Math.round(done/total*100):0}% of total`},
+    {label:'In Progress',val:inprog,col:'#f59e0b',f:'inprogress',sub:'currently active'},
+    {label:'Not Started',val:notstarted,col:'#9ca3af',f:'notstarted',sub:'yet to begin'},
+    {label:'On Hold',val:onhold,col:'#ef4444',f:'onhold',sub:'blocked/paused'},
+  ].map(s=>`
+    <div class="stat-box ${activeFilter===s.f?'active-stat':''}" style="border-top-color:${activeFilter===s.f?s.col:'transparent'};" onclick="filterActs('${s.f}')">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-val" style="color:${s.col};">${s.val}</div>
+      <div class="stat-sub">${s.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('overall-bar-fill').style.width = pct+'%';
+  document.getElementById('overall-bar-pct').textContent = pct+'%';
+  document.getElementById('bar-site-name').textContent = def.name+' — '+def.sub;
+}
+
+function filterActs(f){
+  activeFilter = f;
+  // update filter buttons
+  ['all','notstarted','inprogress','done'].forEach(id=>{
+    const el = document.getElementById('af-'+id);
+    if(!el)return;
+    const isActive = id===f;
+    el.style.borderColor = isActive?'var(--accent2)':'var(--border)';
+    el.style.color = isActive?'var(--accent2)':'';
+    el.style.background = isActive?'#eff6ff':'';
+  });
+  renderStats();
+  renderActivityList();
+}
+
+function renderActivityList(){
+  const wrap = document.getElementById('activity-list');
+  let works = state.works;
+  if(activeFilter==='done') works = works.filter(w=>w.status==='done'||w.pct===100);
+  else if(activeFilter==='inprogress') works = works.filter(w=>w.status==='inprogress'||(w.pct>0&&w.pct<100&&w.status!=='done'));
+  else if(activeFilter==='notstarted') works = works.filter(w=>(!w.status||w.status==='notstarted')&&w.pct===0);
+  else if(activeFilter==='onhold') works = works.filter(w=>w.status==='onhold');
+
+  const label = {all:'All Activities',done:'Completed Activities',inprogress:'In Progress',notstarted:'Not Yet Started',onhold:'On Hold'}[activeFilter]||'Activities';
+  document.getElementById('act-list-label').textContent = `${label} (${works.length})`;
+
+  if(!works.length){
+    wrap.innerHTML=`<div class="empty"><div class="empty-ico">${activeFilter==='done'?'✅':'🔧'}</div><p>${activeFilter==='done'?'No completed items yet.':'No items in this category.'}</p></div>`;
+    return;
+  }
+
+  wrap.innerHTML = works.map((w,i)=>{
+    const st = w.status||(w.pct===100?'done':w.pct===0?'notstarted':'inprogress');
+    const col = statusColor(st);
+    // SVG ring
+    const r=20,circ=2*Math.PI*r;
+    const dash = (w.pct/100)*circ;
+    const ringColor = st==='done'?'#22c55e':st==='inprogress'?'#f59e0b':st==='onhold'?'#ef4444':'#d1d5db';
+    const ring=`<svg width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg)">
+      <circle cx="26" cy="26" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="5"/>
+      <circle cx="26" cy="26" r="${r}" fill="none" stroke="${ringColor}" stroke-width="5" stroke-dasharray="${dash} ${circ}" stroke-linecap="round"/>
+    </svg>`;
+    return `<div class="activity-item status-${st}">
+      <div class="act-info">
+        <div class="act-name">
+          <span style="font-size:12px;font-family:'Roboto Mono',monospace;color:var(--muted);">${String(i+1).padStart(2,'0')}</span>
+          ${w.name}
+          ${w.blockers&&w.blockers.trim()?'<span title="'+w.blockers+'" style="color:var(--danger);font-size:13px;cursor:help;">⚠</span>':''}
+        </div>
+        <div class="act-meta">
+          <span class="act-cat">${w.cat}</span>
+          ${w.startdate?`<span>Started: ${fmtDate(w.startdate)}</span>`:''}
+          ${w.enddate?`<span style="color:#16a34a;">✓ Done: ${fmtDate(w.enddate)}</span>`:''}
+        </div>
+        ${w.completion?`<div class="act-completion">✓ ${w.completion}</div>`:''}
+        ${w.notes&&!w.completion?`<div class="act-notes">${w.notes.slice(0,90)}${w.notes.length>90?'…':''}</div>`:''}
+      </div>
+      <div class="act-pct-col">
+        <div style="position:relative;width:52px;height:52px;margin:0 auto;">
+          ${ring}
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:${ringColor};">${w.pct}%</div>
+        </div>
+      </div>
+      <div class="act-status-col">
+        <select class="status-select s-${st}" onchange="quickStatusChange('${w.id}',this.value)">
+          <option value="notstarted" ${st==='notstarted'?'selected':''}>⬜ Not Started</option>
+          <option value="inprogress" ${st==='inprogress'?'selected':''}>🔄 In Progress</option>
+          <option value="done" ${st==='done'?'selected':''}>✅ Completed</option>
+          <option value="onhold" ${st==='onhold'?'selected':''}>🔴 On Hold</option>
+        </select>
+        ${st==='inprogress'?`<input type="range" min="0" max="100" value="${w.pct}" oninput="quickPctChange('${w.id}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
+      </div>
+      <div class="act-btn-col">
+        <button class="act-edit-btn" onclick="openEditAct('${w.id}')" title="Update details">✎</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// QUICK STATUS CHANGE (inline dropdown)
+// ════════════════════════════════════════
+async function quickStatusChange(id, val){
+  const w = state.works.find(x=>x.id===id); if(!w) return;
+  w.status = val;
+  if(val==='done'){ w.pct=100; if(!w.enddate) w.enddate=new Date().toISOString().slice(0,10); }
+  if(val==='notstarted') w.pct=0;
+  if(val==='inprogress' && w.pct===0) w.pct=5;
+  await saveSite(); renderStats(); renderActivityList(); renderStationTabs();
+}
+
+async function quickPctChange(id, val){
+  const w = state.works.find(x=>x.id===id); if(!w) return;
+  w.pct = parseInt(val);
+  if(w.pct===100){ w.status='done'; if(!w.enddate) w.enddate=new Date().toISOString().slice(0,10); }
+  await saveSite(); renderStats(); renderStationTabs();
+  // update ring live
+  renderActivityList();
+}
+
+// ════════════════════════════════════════
+// ACTIVITY MODAL
+// ════════════════════════════════════════
+function onActStatusChange(){
+  const s = document.getElementById('a-status').value;
+  if(s==='done'){ document.getElementById('a-pct').value=100; if(!document.getElementById('a-enddate').value) document.getElementById('a-enddate').value=new Date().toISOString().slice(0,10); }
+  if(s==='notstarted') document.getElementById('a-pct').value=0;
+}
+function onActPctInput(){
+  const p = parseInt(document.getElementById('a-pct').value)||0;
+  const sel = document.getElementById('a-status');
+  if(p===100) sel.value='done';
+  else if(p===0) sel.value='notstarted';
+  else sel.value='inprogress';
+}
+function openEditAct(id){
+  const w = state.works.find(x=>x.id===id); if(!w) return;
+  editActId = id;
+  document.getElementById('act-modal-title').textContent = 'Update: '+w.name;
+  document.getElementById('a-name').value = w.name;
+  document.getElementById('a-status').value = w.status||(w.pct===100?'done':w.pct===0?'notstarted':'inprogress');
+  document.getElementById('a-pct').value = w.pct;
+  document.getElementById('a-startdate').value = w.startdate||'';
+  document.getElementById('a-enddate').value = w.enddate||'';
+  document.getElementById('a-notes').value = w.notes||'';
+  document.getElementById('a-completion').value = w.completion||'';
+  document.getElementById('a-blockers').value = w.blockers||'';
+  openModal('modal-act');
+}
+async function saveActivity(){
+  const w = state.works.find(x=>x.id===editActId); if(!w) return;
+  const st = document.getElementById('a-status').value;
+  w.name = document.getElementById('a-name').value;
+  w.status = st;
+  w.pct = st==='done'?100:parseInt(document.getElementById('a-pct').value)||0;
+  w.startdate = document.getElementById('a-startdate').value;
+  w.enddate = document.getElementById('a-enddate').value;
+  w.notes = document.getElementById('a-notes').value;
+  w.completion = document.getElementById('a-completion').value;
+  w.blockers = document.getElementById('a-blockers').value;
+  if(st==='done'&&!w.enddate) w.enddate=new Date().toISOString().slice(0,10);
+  await saveSite(); closeModal('modal-act'); renderStats(); renderActivityList(); renderStationTabs();
+}
+
+// ════════════════════════════════════════
+// DAILY LOG
+// ════════════════════════════════════════
+function addLabourRow(){
+  const wrap=document.getElementById('log-labour-rows');
+  const id='lr-'+Date.now();
+  const d=document.createElement('div');
+  d.className='labour-row';d.id=id;
+  d.innerHTML=`<select style="padding:6px 8px;border:1.5px solid var(--border);border-radius:5px;font-size:12px;font-family:'Nunito Sans',sans-serif;background:white;">
+    <option>Mason/Bricklayer</option><option>Carpenter</option><option>Steel Fixer</option>
+    <option>Plumber</option><option>Electrician</option><option>Welder/Fabricator</option>
+    <option>Painter</option><option>Tiler</option><option>Labourer</option>
+    <option>Foreman</option><option>Driver/Plant Op</option><option>Other</option>
+  </select>
+  <input type="text" placeholder="Name (opt.)">
+  <input type="number" min="0" value="1" placeholder="#">
+  <input type="number" min="0" value="8" placeholder="Hrs">
+  <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()">✕</button>`;
+  wrap.appendChild(d);
+}
+function getLabourRows(){
+  return Array.from(document.querySelectorAll('#log-labour-rows .labour-row')).map(r=>{
+    const f=r.querySelectorAll('select,input');
+    return{trade:f[0].value,name:f[1].value,count:f[2].value,hours:f[3].value};
+  });
+}
+function openNewLog(){
+  editLogId=null;
+  document.getElementById('log-modal-title').textContent='New Daily Site Log';
+  document.getElementById('l-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('l-supervisor').value=state.project?.foreman||'';
+  document.getElementById('l-weather').selectedIndex=0;
+  document.getElementById('l-status').selectedIndex=0;
+  ['l-workdone','l-materials','l-problems','l-instructions','l-plant','l-tomorrow'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('log-labour-rows').innerHTML='';
+  addLabourRow();
+  openModal('modal-log');
+}
+async function saveLog(){
+  const log={
+    id:editLogId||Date.now().toString(),
+    date:document.getElementById('l-date').value,
+    supervisor:document.getElementById('l-supervisor').value,
+    weather:document.getElementById('l-weather').value,
+    status:document.getElementById('l-status').value,
+    workdone:document.getElementById('l-workdone').value,
+    materials:document.getElementById('l-materials').value,
+    problems:document.getElementById('l-problems').value,
+    instructions:document.getElementById('l-instructions').value,
+    plant:document.getElementById('l-plant').value,
+    tomorrow:document.getElementById('l-tomorrow').value,
+    labour:getLabourRows()
+  };
+  if(!log.date){alert('Set a date.');return;}
+  if(editLogId){const i=state.logs.findIndex(l=>l.id===editLogId);if(i>-1)state.logs[i]=log;}
+  else state.logs.unshift(log);
+  await saveSite();closeModal('modal-log');renderDaily();
+}
+async function deleteLog(id){if(!confirm('Delete this log?'))return;state.logs=state.logs.filter(l=>l.id!==id);await saveSite();renderDaily();}
+function toggleLog(id){
+  const b=document.getElementById('lb-'+id);const a=document.getElementById('la-'+id);
+  b.classList.toggle('open');a.textContent=b.classList.contains('open')?'▴':'▾';
+}
+function editLog(id){
+  const l=state.logs.find(x=>x.id===id);if(!l)return;
+  editLogId=id;
+  document.getElementById('log-modal-title').textContent='Edit Daily Log';
+  document.getElementById('l-date').value=l.date;
+  document.getElementById('l-supervisor').value=l.supervisor;
+  document.getElementById('l-weather').value=l.weather;
+  document.getElementById('l-status').value=l.status;
+  document.getElementById('l-workdone').value=l.workdone;
+  document.getElementById('l-materials').value=l.materials||'';
+  document.getElementById('l-problems').value=l.problems||'';
+  document.getElementById('l-instructions').value=l.instructions||'';
+  document.getElementById('l-plant').value=l.plant||'';
+  document.getElementById('l-tomorrow').value=l.tomorrow||'';
+  const wrap=document.getElementById('log-labour-rows');wrap.innerHTML='';
+  (l.labour||[]).forEach(r=>{addLabourRow();const rows=wrap.querySelectorAll('.labour-row');const last=rows[rows.length-1];const f=last.querySelectorAll('select,input');f[0].value=r.trade;f[1].value=r.name;f[2].value=r.count;f[3].value=r.hours;});
+  if(!l.labour||!l.labour.length)addLabourRow();
+  openModal('modal-log');
+}
+function renderDaily(){
+  const wrap=document.getElementById('daily-list');
+  if(!state.logs.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><p>No daily logs yet.</p></div>`;return;}
+  const sbMap={ok:'b-green',warn:'b-amber',issue:'b-red',pending:'b-gray'};
+  const stMap={ok:'On Schedule',warn:'Slight Delay',issue:'Delayed',pending:'Awaiting'};
+  wrap.innerHTML=state.logs.map((l,i)=>{
+    const wkrs=l.labour?l.labour.reduce((s,r)=>s+(parseInt(r.count)||0),0):0;
+    return`<div class="log-card">
+      <div class="log-card-hd" onclick="toggleLog('${l.id}')">
+        <div>
+          <div style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--accent);font-weight:500;">${fmtDate(l.date)}</div>
+          <div style="font-weight:700;font-size:14px;margin-top:2px;">${l.workdone?l.workdone.slice(0,65)+(l.workdone.length>65?'…':''):'Daily Log'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${l.supervisor||'—'} · ${l.weather} · ${wkrs} workers</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge ${sbMap[l.status]||'b-gray'}">${stMap[l.status]||l.status}</span>
+          ${l.problems?'<span class="badge b-red">⚠ Issues</span>':''}
+          <span id="la-${l.id}" style="color:var(--muted);font-size:16px;">▾</span>
+        </div>
+      </div>
+      <div class="log-body" id="lb-${l.id}">
+        ${l.workdone?`<div class="log-field"><div class="log-field-label green">✅ Work Done Today</div><div class="log-text">${l.workdone}</div></div>`:''}
+        ${l.materials?`<div class="log-field"><div class="log-field-label blue">📦 Materials</div><div class="log-text">${l.materials}</div></div>`:''}
+        ${l.plant?`<div class="log-field"><div class="log-field-label">🏗 Plant & Equipment</div><div class="log-text">${l.plant}</div></div>`:''}
+        ${l.problems?`<div class="log-field"><div class="log-field-label red">🔴 Problems</div><div class="log-text" style="color:#dc2626;">${l.problems}</div></div>`:''}
+        ${l.instructions?`<div class="log-field"><div class="log-field-label amber">📌 Instructions Received</div><div class="log-text">${l.instructions}</div></div>`:''}
+        ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue">📅 Tomorrow</div><div class="log-text">${l.tomorrow}</div></div>`:''}
+        ${l.labour&&l.labour.length?`<div class="log-field"><div class="log-field-label">👷 Labour (${wkrs} workers)</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.labour.map(r=>`<span class="badge b-gray">${r.trade} ×${r.count}${r.name?' ('+r.name+')':''}</span>`).join('')}</div></div>`:''}
+        <div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+          <button class="btn btn-ghost btn-sm" onclick="editLog('${l.id}')">✎ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">✕ Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// LABOUR
+// ════════════════════════════════════════
+function openAddLabour(){['lb-name','lb-phone','lb-notes'].forEach(id=>document.getElementById(id).value='');openModal('modal-labour');}
+async function saveLabour(){
+  const lb={id:Date.now().toString(),name:document.getElementById('lb-name').value,trade:document.getElementById('lb-trade').value,phone:document.getElementById('lb-phone').value,type:document.getElementById('lb-type').value,notes:document.getElementById('lb-notes').value};
+  if(!lb.name){alert('Enter worker name.');return;}
+  state.labour.push(lb);await saveSite();closeModal('modal-labour');renderLabour();
+}
+async function deleteLabour(id){if(!confirm('Remove?'))return;state.labour=state.labour.filter(l=>l.id!==id);await saveSite();renderLabour();}
+function renderLabour(){
+  const wrap=document.getElementById('labour-wrap');
+  if(!state.labour.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">👷</div><p>No workers registered.</p></div>`;return;}
+  const types=[...new Set(state.labour.map(l=>l.type))];
+  wrap.innerHTML=types.map(type=>{
+    const ws=state.labour.filter(l=>l.type===type);
+    return`<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
+      <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:700;font-size:13px;">👷 ${type} (${ws.length})</div>
+      <table class="t">
+        <thead><tr><th>Name</th><th>Trade</th><th>Phone</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${ws.map(w=>`<tr>
+          <td style="font-weight:700;">${w.name}</td>
+          <td><span class="badge b-blue">${w.trade}</span></td>
+          <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${w.phone||'—'}</td>
+          <td style="font-size:11px;color:var(--muted);">${w.notes||'—'}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteLabour('${w.id}')">✕</button></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// INSTRUCTIONS
+// ════════════════════════════════════════
+function openAddInstruction(){document.getElementById('i-date').value=new Date().toISOString().slice(0,10);['i-from','i-desc','i-action'].forEach(id=>document.getElementById(id).value='');document.getElementById('i-status').value='open';openModal('modal-instr');}
+async function saveInstruction(){
+  const ins={id:Date.now().toString(),date:document.getElementById('i-date').value,from:document.getElementById('i-from').value,type:document.getElementById('i-type').value,desc:document.getElementById('i-desc').value,action:document.getElementById('i-action').value,status:document.getElementById('i-status').value};
+  if(!ins.desc){alert('Enter description.');return;}
+  state.instructions.unshift(ins);await saveSite();closeModal('modal-instr');renderInstructions();
+}
+async function deleteInstr(id){if(!confirm('Delete?'))return;state.instructions=state.instructions.filter(i=>i.id!==id);await saveSite();renderInstructions();}
+async function updateInstrStatus(id,val){const i=state.instructions.find(x=>x.id===id);if(i){i.status=val;await saveSite();renderInstructions();}}
+function renderInstructions(){
+  const wrap=document.getElementById('instr-list');
+  if(!state.instructions.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">📌</div><p>No instructions logged yet.</p></div>`;return;}
+  const ibm={open:'b-red',progress:'b-amber',done:'b-green'};
+  const ibt={open:'Open',progress:'In Progress',done:'Done'};
+  wrap.innerHTML=state.instructions.map(ins=>`
+    <div class="instr-card">
+      <div class="instr-card-hd">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${ins.type} — ${fmtDate(ins.date)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">From: ${ins.from||'—'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge ${ibm[ins.status]||'b-gray'}">${ibt[ins.status]||ins.status}</span>
+          <select onchange="updateInstrStatus('${ins.id}',this.value)" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'Nunito Sans',sans-serif;">
+            <option value="open" ${ins.status==='open'?'selected':''}>Open</option>
+            <option value="progress" ${ins.status==='progress'?'selected':''}>In Progress</option>
+            <option value="done" ${ins.status==='done'?'selected':''}>Done</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:12px 16px;">
+        <div style="font-size:13px;line-height:1.6;margin-bottom:8px;"><strong>Instruction:</strong> ${ins.desc}</div>
+        ${ins.action?`<div style="font-size:12px;background:var(--surface);padding:8px 10px;border-radius:6px;border-left:3px solid var(--accent2);"><strong>Response:</strong> ${ins.action}</div>`:''}
+        <div style="margin-top:10px;"><button class="btn btn-danger btn-sm" onclick="deleteInstr('${ins.id}')">✕ Delete</button></div>
+      </div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════
+// PROJECT SETUP
+// ════════════════════════════════════════
+function openProjectSetup(){
+  const p=state.project||{};
+  ['company','name','client','engineer','start','end','sum','foreman'].forEach(f=>{const el=document.getElementById('p-'+f);if(el)el.value=p[f]||'';});
+  openModal('modal-project');
+}
+async function saveProject(){
+  state.project={company:document.getElementById('p-company').value,name:document.getElementById('p-name').value,client:document.getElementById('p-client').value,engineer:document.getElementById('p-engineer').value,start:document.getElementById('p-start').value,end:document.getElementById('p-end').value,sum:document.getElementById('p-sum').value,foreman:document.getElementById('p-foreman').value};
+  await saveSite();closeModal('modal-project');
+}
+
+// ════════════════════════════════════════
+// REPORT
+// ════════════════════════════════════════
+function renderReport(){
+  const wrap=document.getElementById('report-content');
+  const p=state.project||{};
+  const def=SITE_DEFS[activeSite];
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const w=state.works;
+  const done=w.filter(x=>x.status==='done'||x.pct===100).length;
+  wrap.innerHTML=`<div class="report-wrap">
+    <div class="rep-head">
+      <div>
+        <div class="rep-co">${p.company||'Build<span>Track</span>'}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Contractor's Site Progress Report</div>
+      </div>
+      <div class="rep-meta">
+        <div><strong>Site:</strong> ${def.name}</div>
+        <div><strong>Date:</strong> ${today}</div>
+        <div><strong>Progress:</strong> ${avgPct(w)}% (${done}/${w.length} items done)</div>
+      </div>
+    </div>
+    <div class="rep-h3">CONTRACT DETAILS</div>
+    <div class="rep-grid">
+      <div><strong>Project:</strong>${p.name||def.name+' – '+def.sub}</div>
+      <div><strong>Client:</strong>${p.client||def.defaultProject?.client||'—'}</div>
+      <div><strong>Consultant:</strong>${p.engineer||'—'}</div>
+      <div><strong>Foreman:</strong>${p.foreman||'—'}</div>
+      <div><strong>Contract Start:</strong>${fmtDate(p.start)}</div>
+      <div><strong>Planned Completion:</strong>${fmtDate(p.end)}</div>
+      <div><strong>Contract Sum:</strong>${p.sum?'USHS '+p.sum:'—'}</div>
+      <div><strong>Location:</strong>${def.location}</div>
+    </div>
+    ${w.length?`<div class="rep-h3">WORKS PROGRESS (${done} of ${w.length} completed)</div>
+    ${w.map(item=>{const st=item.status||(item.pct===100?'done':item.pct===0?'notstarted':'inprogress');const col={done:'#22c55e',inprogress:'#f59e0b',notstarted:'#9ca3af',onhold:'#ef4444'}[st];return`<div class="prog-wrap">
+      <div class="prog-label"><span><strong>${item.name}</strong> <span style="font-size:10px;color:var(--muted);">(${item.cat})</span></span><div style="display:flex;align-items:center;gap:8px;"><span class="badge ${{done:'b-green',inprogress:'b-amber',notstarted:'b-gray',onhold:'b-red'}[st]}">${statusLabel(st)}</span><span>${item.pct}%</span></div></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${item.pct}%;background:${col};"></div></div>
+      ${item.enddate?`<div style="font-size:10px;color:#16a34a;">Completed: ${fmtDate(item.enddate)}</div>`:''}
+      ${item.completion?`<div style="font-size:10px;color:#16a34a;font-style:italic;">${item.completion}</div>`:''}
+    </div>`;}).join('')}`:''}
+    ${state.instructions.filter(i=>i.status!=='done').length?`<div class="rep-h3">OUTSTANDING INSTRUCTIONS (${state.instructions.filter(i=>i.status!=='done').length})</div>
+    ${state.instructions.filter(i=>i.status!=='done').map(ins=>`<div style="padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:12px;"><div style="font-weight:700;">${ins.type} — ${fmtDate(ins.date)} · From: ${ins.from||'—'}</div><div>${ins.desc}</div>${ins.action?`<div style="color:var(--muted);font-style:italic;">Response: ${ins.action}</div>`:''}</div>`).join('')}`:''}
+    ${state.logs.length?`<div class="rep-h3">DAILY LOG RECORDS (${state.logs.length} entries)</div>
+    ${state.logs.map((l,i)=>{const wkrs=l.labour?l.labour.reduce((s,r)=>s+(parseInt(r.count)||0),0):0;return`<div style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
+      <div style="font-weight:700;margin-bottom:4px;">Entry ${state.logs.length-i}: ${fmtDate(l.date)} · ${l.weather} · ${l.supervisor||'—'} · ${wkrs} workers</div>
+      ${l.workdone?`<div><strong>Work Done:</strong> ${l.workdone}</div>`:''}
+      ${l.materials?`<div><strong>Materials:</strong> ${l.materials}</div>`:''}
+      ${l.problems?`<div style="color:var(--danger);"><strong>Problems:</strong> ${l.problems}</div>`:''}
+      ${l.instructions?`<div><strong>Instructions:</strong> ${l.instructions}</div>`:''}
+      ${l.tomorrow?`<div><strong>Tomorrow:</strong> ${l.tomorrow}</div>`:''}
+    </div>`;}).join('')}`:''}
+    <div style="margin-top:28px;padding-top:14px;border-top:2px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--muted);">
+      <span>Prepared by: ${p.foreman||'_____________________'}</span>
+      <span>Signature: _____________________</span>
+      <span>Date: ${today}</span>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+(async () => {
+  renderStationTabs();
+  await loadSite(activeSite);
+  renderStationTabs();
+  renderActivitiesPage();
+})();
+</script>
+</body>
+</html>
