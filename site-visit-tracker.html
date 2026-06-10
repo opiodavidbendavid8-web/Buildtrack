@@ -18,6 +18,7 @@
   --success: #22c55e;
   --danger: #ef4444;
   --warn: #f97316;
+  --purple: #8b5cf6;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;}
@@ -260,6 +261,26 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);
 .empty{text-align:center;padding:40px 20px;color:#9ca3af;}
 .empty-ico{font-size:36px;margin-bottom:8px;}
 
+/* ── LOGIN ── */
+.login-screen{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.login-box{background:white;border-radius:16px;padding:36px 32px;width:380px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.login-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--accent);text-align:center;margin-bottom:4px;}
+.login-logo span{color:var(--ink);}
+.login-sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:24px;}
+.login-err{background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px;display:none;}
+.role-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.5px;}
+.role-foreman{background:#fef3c7;color:#92400e;}
+.role-engineer{background:#dbeafe;color:#1d4ed8;}
+.role-superior{background:#fce7f3;color:#9d174d;}
+.role-client{background:#f3f4f6;color:#374151;}
+/* ── PHOTO ── */
+.photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.photo-thumb{width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid var(--border);cursor:pointer;}
+.photo-thumb:hover{border-color:var(--accent2);}
+.photo-upload-btn{width:80px;height:80px;border:2px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:24px;background:var(--surface);transition:all .15s;flex-shrink:0;}
+.photo-upload-btn:hover{border-color:var(--accent2);color:var(--accent2);background:#eff6ff;}
+/* ── EXPENSE TABLE ── */
+.expense-table-wrap{background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto;}
 /* ── PRINT ── */
 @media print{
   .app-header,.station-tabs,.nav-tabs,.btn,.overlay{display:none!important;}
@@ -278,13 +299,105 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);
 </head>
 <body>
 
+<!-- ══ LOGIN ══ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box" style="width:420px;">
+    <div class="login-logo">Build<span>Track</span></div>
+    <div class="login-sub">Contractor Site Management System</div>
+
+    <!-- TABS -->
+    <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:22px;">
+      <button id="tab-signin" onclick="showAuthTab('signin')" style="flex:1;padding:9px;border:none;background:var(--accent);color:#1a1a1a;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">Sign In</button>
+      <button id="tab-signup" onclick="showAuthTab('signup')" style="flex:1;padding:9px;border:none;background:white;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">Create Account</button>
+    </div>
+
+    <div class="login-err" id="login-err"></div>
+
+    <!-- SIGN IN FORM -->
+    <div id="form-signin">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Email Address</label>
+        <input type="email" id="login-email" placeholder="your@email.com" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="email">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Password</label>
+        <input type="password" id="login-pass" placeholder="Password" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="current-password">
+      </div>
+      <button onclick="doLogin()" style="width:100%;padding:11px;background:var(--accent);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">Sign In</button>
+      <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">New to BuildTrack? <a href="#" onclick="showAuthTab('signup');return false;" style="color:var(--accent2);font-weight:700;">Create an account</a></p>
+    </div>
+
+    <!-- SIGN UP FORM -->
+    <div id="form-signup" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Full Name</label>
+        <input type="text" id="reg-name" placeholder="Your full name" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Email Address</label>
+        <input type="email" id="reg-email" placeholder="your@email.com" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="email">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Password</label>
+        <input type="password" id="reg-pass" placeholder="Min 6 characters" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="new-password">
+      </div>
+
+      <!-- WHO ARE YOU -->
+      <div style="margin-bottom:14px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;">I am a…</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <label id="role-opt-foreman" onclick="selectRole('foreman')" style="border:2px solid var(--accent);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .12s;background:#fffbeb;">
+            <input type="radio" name="reg-role" value="foreman" checked style="display:none;">
+            <span style="font-size:20px;">🟡</span>
+            <div><div style="font-weight:700;font-size:13px;">Foreman</div><div style="font-size:10px;color:var(--muted);">Log daily site work</div></div>
+          </label>
+          <label id="role-opt-engineer" onclick="selectRole('engineer')" style="border:2px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .12s;">
+            <input type="radio" name="reg-role" value="engineer" style="display:none;">
+            <span style="font-size:20px;">🔵</span>
+            <div><div style="font-weight:700;font-size:13px;">Engineer</div><div style="font-size:10px;color:var(--muted);">Supervise all sites</div></div>
+          </label>
+          <label id="role-opt-superior" onclick="selectRole('superior')" style="border:2px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .12s;">
+            <input type="radio" name="reg-role" value="superior" style="display:none;">
+            <span style="font-size:20px;">🔴</span>
+            <div><div style="font-weight:700;font-size:13px;">Superior</div><div style="font-size:10px;color:var(--muted);">Full access & reports</div></div>
+          </label>
+          <label id="role-opt-client" onclick="selectRole('client')" style="border:2px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .12s;">
+            <input type="radio" name="reg-role" value="client" style="display:none;">
+            <span style="font-size:20px;">⚪</span>
+            <div><div style="font-weight:700;font-size:13px;">Client</div><div style="font-size:10px;color:var(--muted);">View reports only</div></div>
+          </label>
+        </div>
+      </div>
+
+      <!-- ASSIGNED SITE (for foreman) -->
+      <div id="site-select-wrap" style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
+        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Assigned Site</label>
+        <select id="reg-site" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;">
+          <option value="all">All Sites</option>
+          <option value="ndeeba">TE Ndeeba Mbawo</option>
+          <option value="kyengera">TE Kyengera SS</option>
+          <option value="kabuusu">TE Kabuusu</option>
+          <option value="mpigi">RUBiS Mpigi-Nakirebe</option>
+        </select>
+      </div>
+
+      <button onclick="doSignUp()" style="width:100%;padding:11px;background:var(--accent2);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:white;">Create Account</button>
+      <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">Already have an account? <a href="#" onclick="showAuthTab('signin');return false;" style="color:var(--accent);font-weight:700;">Sign in</a></p>
+    </div>
+
+  </div>
+</div>
+
 <!-- ══ HEADER ══ -->
 <div class="app-header">
   <div class="logo">Build<span>Track</span></div>
   <div class="header-right">
     <span id="sync-status" style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:.5px;">● Live</span>
+    <span id="user-role-badge" class="role-pill role-foreman" style="display:none;"></span>
+    <span id="user-name-hd" style="font-size:12px;color:#e5e7eb;font-weight:600;display:none;"></span>
     <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:#374151;" onclick="openProjectSetup()">⚙ Project Info</button>
-    <button class="btn btn-amber btn-sm" onclick="openNewLog()">+ Daily Log</button>
+    <button class="btn btn-amber btn-sm" id="btn-new-log" onclick="openNewLog()">+ Daily Log</button>
+    <button id="btn-logout" onclick="doLogout()" style="display:none;padding:5px 12px;background:transparent;border:1.5px solid #374151;border-radius:6px;color:#e5e7eb;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Sign Out</button>
   </div>
 </div>
 
@@ -295,9 +408,12 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);
 <div class="nav-tabs">
   <div class="nav-tab active" onclick="goPage('activities',this)">📋 Activities</div>
   <div class="nav-tab" onclick="goPage('daily',this)">🗓 Daily Log</div>
+  <div class="nav-tab" onclick="goPage('expenses',this)">💰 Expenses</div>
+  <div class="nav-tab" onclick="goPage('materials',this)">📦 Materials</div>
   <div class="nav-tab" onclick="goPage('labour',this)">👷 Labour</div>
   <div class="nav-tab" onclick="goPage('instructions',this)">📌 Instructions</div>
   <div class="nav-tab" onclick="goPage('report',this)">📄 Report</div>
+  <div class="nav-tab" id="tab-admin" style="display:none;" onclick="goPage('admin',this)">⚙ Users</div>
 </div>
 
 <!-- ══ CONTENT ══ -->
@@ -362,10 +478,44 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);
   <div class="page" id="page-report">
     <div class="sec-hd">
       <h2>Site Report</h2>
-      <button class="btn btn-ghost btn-sm" onclick="window.print()">⎙ Print / PDF</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>
+        <button class="btn btn-blue btn-sm" id="btn-word-report" style="display:none;" onclick="generateWordReport()">📄 Word Report</button>
+      </div>
     </div>
     <div id="report-content"></div>
   </div>
+
+  <!-- EXPENSES -->
+  <div class="page" id="page-expenses">
+    <div class="sec-hd">
+      <h2>Daily Expenses</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span id="expense-totals" class="badge b-amber" style="font-size:11px;padding:5px 12px;"></span>
+        <button class="btn btn-amber btn-sm" id="btn-new-expense" onclick="openAddExpense()">+ Add Expense</button>
+      </div>
+    </div>
+    <div id="expense-list"></div>
+  </div>
+
+  <!-- MATERIALS -->
+  <div class="page" id="page-materials">
+    <div class="sec-hd">
+      <h2>Materials &amp; Services Supply List</h2>
+      <button class="btn btn-blue btn-sm" id="btn-new-material" onclick="openAddMaterial()">+ Add Item</button>
+    </div>
+    <div id="material-list"></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="page" id="page-admin">
+    <div class="sec-hd">
+      <h2>User Management</h2>
+      <button class="btn btn-sm" style="background:var(--purple);color:white;" onclick="openAddUser()">+ Add User</button>
+    </div>
+    <div id="admin-user-list"></div>
+  </div>
+
 </div>
 
 <!-- ══ MODAL: Update Activity ══ -->
@@ -456,6 +606,16 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);
         <span></span>
       </div>
       <div id="log-labour-rows"></div>
+
+      <!-- PHOTOS -->
+      <div style="margin:14px 0 6px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">📸 Site Photos</div>
+        <span style="font-size:11px;color:var(--muted);">Max 5 photos · Stored as thumbnails</span>
+      </div>
+      <div id="photo-preview-grid" class="photo-grid">
+        <label class="photo-upload-btn" for="photo-file-input" title="Add photo">+</label>
+        <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(this)">
+      </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="closeModal('modal-log')">Cancel</button>
@@ -464,7 +624,113 @@ body{font-family:'Nunito Sans',sans-serif;background:var(--bg);color:var(--ink);
   </div>
 </div>
 
-<!-- ══ MODAL: Add Labour ══ -->
+<!-- ══ MODAL: Expense ══ -->
+<div class="overlay" id="modal-expense">
+  <div class="modal" style="width:480px;">
+    <div class="modal-hd"><h3>Add Expense</h3><button class="modal-close" onclick="closeModal('modal-expense')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Date</label><input type="date" id="ex-date"></div>
+      <div class="fg"><label>Description</label><input type="text" id="ex-desc" placeholder="What was purchased / paid for"></div>
+      <div class="fg2">
+        <div class="fg"><label>Category</label>
+          <select id="ex-cat">
+            <option>Labour / Wages</option><option>Materials</option><option>Plant Hire</option>
+            <option>Transport</option><option>Fuel</option><option>Tools &amp; Equipment</option>
+            <option>Site Overheads</option><option>Subcontractor</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Amount (USHS)</label><input type="number" id="ex-amount" placeholder="0" min="0"></div>
+      </div>
+      <div class="fg"><label>Paid To / Supplier</label><input type="text" id="ex-supplier" placeholder="Name of person or company paid"></div>
+      <div class="fg"><label>Receipt / Reference No.</label><input type="text" id="ex-receipt" placeholder="Receipt number (optional)"></div>
+      <div class="fg"><label>Notes</label><textarea id="ex-notes" style="min-height:55px;"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-expense')">Cancel</button>
+      <button class="btn btn-amber" onclick="saveExpense()">Save Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Material ══ -->
+<div class="overlay" id="modal-material">
+  <div class="modal" style="width:520px;">
+    <div class="modal-hd"><h3 id="mat-modal-title">Add Material / Service</h3><button class="modal-close" onclick="closeModal('modal-material')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Item / Service Description</label><input type="text" id="mat-name" placeholder="e.g. Cement OPC 50kg bags, Excavation Works..."></div>
+      <div class="fg2">
+        <div class="fg"><label>Type</label><select id="mat-type"><option value="material">Material / Supply</option><option value="service">Service / Labour</option></select></div>
+        <div class="fg"><label>Quantity</label><input type="text" id="mat-qty" placeholder="e.g. 50"></div>
+        <div class="fg"><label>Unit</label><input type="text" id="mat-unit" placeholder="bags, m², Lm, No."></div>
+        <div class="fg"><label>Est. Cost (USHS)</label><input type="number" id="mat-cost" placeholder="0" min="0"></div>
+      </div>
+      <div class="fg"><label>Supplier / Subcontractor</label><input type="text" id="mat-supplier" placeholder="Supplier name"></div>
+      <div class="fg2">
+        <div class="fg"><label>Date Required</label><input type="date" id="mat-dateReq"></div>
+        <div class="fg"><label>Status</label>
+          <select id="mat-status">
+            <option value="pending">Pending / Not Ordered</option>
+            <option value="ordered">Ordered</option>
+            <option value="delivered">Delivered to Site</option>
+            <option value="used">Used / Complete</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Notes / Spec</label><textarea id="mat-notes" style="min-height:50px;"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-material')">Cancel</button>
+      <button class="btn btn-amber" id="mat-save-btn" onclick="saveMaterial()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Add User ══ -->
+<div class="overlay" id="modal-user">
+  <div class="modal" style="width:460px;">
+    <div class="modal-hd"><h3>Add User Account</h3><button class="modal-close" onclick="closeModal('modal-user')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Full Name</label><input type="text" id="u-name" placeholder="Full name"></div>
+      <div class="fg"><label>Email</label><input type="email" id="u-email" placeholder="user@email.com"></div>
+      <div class="fg"><label>Password</label><input type="password" id="u-pass" placeholder="Min 6 characters"></div>
+      <div class="fg2">
+        <div class="fg"><label>Role</label>
+          <select id="u-role">
+            <option value="foreman">🟡 Foreman</option>
+            <option value="engineer">🔵 Engineer</option>
+            <option value="superior">🔴 Superior</option>
+            <option value="client">⚪ Client / Owner</option>
+          </select>
+        </div>
+        <div class="fg"><label>Assigned Site</label>
+          <select id="u-site">
+            <option value="all">All Sites</option>
+            <option value="ndeeba">TE Ndeeba Mbawo</option>
+            <option value="kyengera">TE Kyengera SS</option>
+            <option value="kabuusu">TE Kabuusu</option>
+            <option value="mpigi">RUBiS Mpigi-Nakirebe</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:12px;color:#166534;margin-top:4px;">
+        <strong>Permissions:</strong><br>
+        🟡 <strong>Foreman</strong> — log daily entries, expenses &amp; materials (assigned site only)<br>
+        🔵 <strong>Engineer</strong> — all sites, update progress, approve/reject expenses<br>
+        🔴 <strong>Superior</strong> — full access, manage users, generate Word reports<br>
+        ⚪ <strong>Client</strong> — view-only dashboard and reports
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancel</button>
+      <button class="btn btn-sm" style="background:var(--purple);color:white;padding:7px 16px;" onclick="saveUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Photo Lightbox ══ -->
+<div class="overlay" id="modal-photo" onclick="closeModal('modal-photo')" style="background:rgba(0,0,0,.9);">
+  <img id="modal-photo-img" src="" style="max-width:95vw;max-height:90vh;border-radius:8px;object-fit:contain;">
+</div>
 <div class="overlay" id="modal-labour">
   <div class="modal" style="width:440px;">
     <div class="modal-hd"><h3>Add Worker</h3><button class="modal-close" onclick="closeModal('modal-labour')">✕</button></div>
@@ -717,20 +983,552 @@ function setSyncStatus(status) {
 }
 
 // ════════════════════════════════════════
-// STATE
+// FIREBASE AUTH
 // ════════════════════════════════════════
+const FB_AUTH = `https://identitytoolkit.googleapis.com/v1/accounts`;
+let currentUser = null; // {uid, email, name, role, site, idToken}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent='Please enter email and password.'; errEl.style.display='block'; return; }
+  try {
+    const r = await fetch(`${FB_AUTH}:signInWithPassword?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password:pass, returnSecureToken:true})
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      const msg = j.error?.message||'';
+      errEl.textContent = msg.includes('EMAIL_NOT_FOUND')||msg.includes('INVALID_PASSWORD')||msg.includes('INVALID_LOGIN_CREDENTIALS') ? 'Incorrect email or password.' : (msg||'Login failed.');
+      errEl.style.display='block'; return;
+    }
+    const profile = await fsGet('users', j.localId);
+    if (!profile) { errEl.textContent='Account not set up. Contact your administrator.'; errEl.style.display='block'; return; }
+    currentUser = {uid:j.localId, email:j.email, name:profile.name||j.email, role:profile.role||'foreman', site:profile.site||'all', idToken:j.idToken};
+    localStorage.setItem('bt_user', JSON.stringify(currentUser));
+    startApp();
+  } catch(e) { errEl.textContent='Network error. Check your connection.'; errEl.style.display='block'; }
+}
+
+// ── Auth tab switching ──
+function showAuthTab(tab) {
+  const isSignin = tab === 'signin';
+  document.getElementById('form-signin').style.display = isSignin ? '' : 'none';
+  document.getElementById('form-signup').style.display = isSignin ? 'none' : '';
+  document.getElementById('tab-signin').style.background = isSignin ? 'var(--accent)' : 'white';
+  document.getElementById('tab-signin').style.color = isSignin ? '#1a1a1a' : 'var(--muted)';
+  document.getElementById('tab-signup').style.background = isSignin ? 'white' : 'var(--accent2)';
+  document.getElementById('tab-signup').style.color = isSignin ? 'var(--muted)' : 'white';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+// ── Role card selection ──
+let selectedRole = 'foreman';
+function selectRole(role) {
+  selectedRole = role;
+  const roles = ['foreman','engineer','superior','client'];
+  const colors = {foreman:'#f59e0b',engineer:'#0ea5e9',superior:'#ec4899',client:'#9ca3af'};
+  const bgs = {foreman:'#fffbeb',engineer:'#eff6ff',superior:'#fdf2f8',client:'#f9fafb'};
+  roles.forEach(r => {
+    const el = document.getElementById('role-opt-'+r);
+    if (!el) return;
+    const active = r === role;
+    el.style.border = `2px solid ${active ? colors[r] : 'var(--border)'}`;
+    el.style.background = active ? bgs[r] : 'white';
+  });
+  // Show site selector only for foreman
+  const sw = document.getElementById('site-select-wrap');
+  if (sw) sw.style.display = role === 'foreman' ? '' : 'none';
+}
+
+// ── Sign Up ──
+async function doSignUp() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  const role  = selectedRole;
+  const site  = role === 'foreman' ? (document.getElementById('reg-site').value || 'all') : 'all';
+  const errEl = document.getElementById('login-err');
+  errEl.style.display = 'none';
+
+  if (!name)  { errEl.textContent='Please enter your full name.'; errEl.style.display='block'; return; }
+  if (!email) { errEl.textContent='Please enter your email address.'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent='Password must be at least 6 characters.'; errEl.style.display='block'; return; }
+
+  try {
+    // Create Firebase Auth account
+    const r = await fetch(`${FB_AUTH}:signUp?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password:pass, returnSecureToken:true})
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      const msg = j.error?.message || '';
+      errEl.textContent = msg.includes('EMAIL_EXISTS') ? 'An account with this email already exists. Please sign in.' : (msg || 'Could not create account.');
+      errEl.style.display='block'; return;
+    }
+    // Save profile to Firestore
+    await fsSet('users', j.localId, { name, email, role, site, createdAt: new Date().toISOString(), status: 'active' });
+    // Auto sign in
+    currentUser = { uid:j.localId, email:j.email, name, role, site, idToken:j.idToken };
+    localStorage.setItem('bt_user', JSON.stringify(currentUser));
+    startApp();
+  } catch(e) {
+    errEl.textContent = 'Network error. Check your connection and try again.';
+    errEl.style.display='block';
+  }
+}
+// ── Sign Out ──
+function doLogout() {
+  document.getElementById('btn-logout').style.display='none';
+  document.getElementById('user-name-hd').style.display='none';
+  document.getElementById('user-role-badge').style.display='none';
+}
+
+function startApp() {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('btn-logout').style.display='';
+  const nhd = document.getElementById('user-name-hd');
+  nhd.textContent = currentUser.name; nhd.style.display='';
+  const rb = document.getElementById('user-role-badge');
+  const roleMap = {foreman:'role-foreman',engineer:'role-engineer',superior:'role-superior',client:'role-client'};
+  rb.className = 'role-pill '+(roleMap[currentUser.role]||'role-client');
+  rb.textContent = currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1);
+  rb.style.display='';
+  // Show admin tab for superior only
+  if (currentUser.role==='superior') document.getElementById('tab-admin').style.display='';
+  // Show Word report button for engineer/superior
+  if (currentUser.role==='superior'||currentUser.role==='engineer') document.getElementById('btn-word-report').style.display='';
+  // Hide add buttons for client
+  if (currentUser.role==='client') {
+    ['btn-new-log','btn-new-expense','btn-new-material'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  }
+  // Load correct site
+  if (currentUser.site!=='all') activeSite = currentUser.site;
+  loadSite(activeSite).then(()=>{ renderStationTabs(); renderActivitiesPage(); });
+}
+
+function canEdit()    { return currentUser && currentUser.role !== 'client'; }
+function canApprove() { return currentUser && (currentUser.role==='engineer'||currentUser.role==='superior'); }
+
+// ════════════════════════════════════════
+// PHOTOS (stored as base64 in Firestore)
+// ════════════════════════════════════════
+let pendingPhotos = []; // [{dataUrl, name}] for current modal session
+
+function handlePhotoUpload(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    if (pendingPhotos.length >= 5) { alert('Maximum 5 photos per log entry.'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      // Compress to max 600px wide
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 600;
+        const scale = Math.min(1, maxW / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        pendingPhotos.push({dataUrl, name: file.name});
+        renderPhotoGrid();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = ''; // reset so same file can be re-added
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photo-preview-grid');
+  if (!grid) return;
+  const thumbs = pendingPhotos.map((p,i) => `
+    <div style="position:relative;">
+      <img src="${p.dataUrl}" class="photo-thumb" onclick="viewPhoto('${p.dataUrl}')" title="${p.name}">
+      <button onclick="removePhoto(${i})" style="position:absolute;top:-5px;right:-5px;background:var(--danger);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>`).join('');
+  grid.innerHTML = thumbs + (pendingPhotos.length < 5 ? `<label class="photo-upload-btn" for="photo-file-input" title="Add photo">+</label><input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(this)">` : '');
+}
+
+function removePhoto(i) { pendingPhotos.splice(i,1); renderPhotoGrid(); }
+
+function viewPhoto(src) {
+  document.getElementById('modal-photo-img').src = src;
+  openModal('modal-photo');
+}
+
+function renderLogPhotos(photos) {
+  if (!photos||!photos.length) return '';
+  return `<div class="log-field">
+    <div class="log-field-label">📸 Site Photos (${photos.length})</div>
+    <div class="photo-grid" style="margin-top:6px;">
+      ${photos.map(p=>`<img src="${p.dataUrl}" class="photo-thumb" onclick="viewPhoto('${p.dataUrl}')" title="${p.name||'Photo'}">`).join('')}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════
+// EXPENSES
+// ════════════════════════════════════════
+let editExpenseId = null;
+
+function openAddExpense() {
+  editExpenseId = null;
+  document.getElementById('ex-date').value = new Date().toISOString().slice(0,10);
+  ['ex-desc','ex-supplier','ex-receipt','ex-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ex-amount').value='';
+  openModal('modal-expense');
+}
+async function saveExpense() {
+  const ex = {
+    id: editExpenseId||Date.now().toString(),
+    date: document.getElementById('ex-date').value,
+    desc: document.getElementById('ex-desc').value,
+    cat:  document.getElementById('ex-cat').value,
+    amount: parseFloat(document.getElementById('ex-amount').value)||0,
+    supplier: document.getElementById('ex-supplier').value,
+    receipt: document.getElementById('ex-receipt').value,
+    notes: document.getElementById('ex-notes').value,
+    submittedBy: currentUser?.name||'',
+    approvedBy: '', status: 'pending'
+  };
+  if (!ex.desc) { alert('Enter a description.'); return; }
+  if (editExpenseId) { const i=state.expenses.findIndex(x=>x.id===editExpenseId); if(i>-1) state.expenses[i]=ex; }
+  else state.expenses.unshift(ex);
+  await saveSite(); closeModal('modal-expense'); renderExpenses();
+}
+async function approveExpense(id) {
+  const ex=state.expenses.find(x=>x.id===id); if(!ex)return;
+  ex.status='approved'; ex.approvedBy=currentUser?.name||'';
+  await saveSite(); renderExpenses();
+}
+async function rejectExpense(id) {
+  const ex=state.expenses.find(x=>x.id===id); if(!ex)return;
+  ex.status='rejected'; await saveSite(); renderExpenses();
+}
+async function deleteExpense(id) {
+  if(!confirm('Delete this expense?'))return;
+  state.expenses=state.expenses.filter(x=>x.id!==id); await saveSite(); renderExpenses();
+}
+function renderExpenses() {
+  const wrap=document.getElementById('expense-list');
+  if (!wrap) return;
+  const total = state.expenses.reduce((s,e)=>s+e.amount,0);
+  const approved = state.expenses.filter(e=>e.status==='approved').reduce((s,e)=>s+e.amount,0);
+  const tb = document.getElementById('expense-totals');
+  if (tb) tb.textContent = `Total: UGX ${total.toLocaleString()} · Approved: UGX ${approved.toLocaleString()}`;
+  if (!state.expenses.length) { wrap.innerHTML=`<div class="empty"><div class="empty-ico">💰</div><p>No expenses recorded yet.</p></div>`; return; }
+  const sc={pending:'b-amber',approved:'b-green',rejected:'b-red'};
+  wrap.innerHTML=`<div class="expense-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:var(--ink);color:#e5e7eb;">
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Date</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Description</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Category</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Amount</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Paid To</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">By</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Status</th>
+      <th style="padding:8px 12px;"></th>
+    </tr></thead>
+    <tbody>${state.expenses.map(ex=>`<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:11px;">${fmtDate(ex.date)}</td>
+      <td style="padding:9px 12px;font-weight:700;">${ex.desc}${ex.receipt?`<div style="font-size:10px;color:var(--muted);">Ref: ${ex.receipt}</div>`:''}</td>
+      <td style="padding:9px 12px;"><span class="badge b-blue" style="font-size:9px;">${ex.cat}</span></td>
+      <td style="padding:9px 12px;font-weight:700;font-family:'Roboto Mono',monospace;">UGX ${ex.amount.toLocaleString()}</td>
+      <td style="padding:9px 12px;font-size:12px;">${ex.supplier||'—'}</td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${ex.submittedBy||'—'}</td>
+      <td style="padding:9px 12px;"><span class="badge ${sc[ex.status]||'b-gray'}">${ex.status}</span>${ex.approvedBy?`<div style="font-size:9px;color:var(--muted);">by ${ex.approvedBy}</div>`:''}</td>
+      <td style="padding:9px 12px;"><div style="display:flex;gap:4px;flex-wrap:wrap;">
+        ${canApprove()&&ex.status==='pending'?`<button class="btn btn-sm" style="background:var(--success);color:white;padding:4px 10px;" onclick="approveExpense('${ex.id}')">✓</button><button class="btn btn-danger btn-sm" style="padding:4px 10px;" onclick="rejectExpense('${ex.id}')">✕</button>`:''}
+        ${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="deleteExpense('${ex.id}')">🗑</button>`:''}
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ════════════════════════════════════════
+// MATERIALS & SERVICES
+// ════════════════════════════════════════
+let editMatId = null;
+
+function openAddMaterial() {
+  editMatId=null;
+  document.getElementById('mat-modal-title').textContent='Add Material / Service';
+  document.getElementById('mat-save-btn').textContent='Add Item';
+  ['mat-name','mat-qty','mat-unit','mat-supplier','mat-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mat-cost').value='';
+  document.getElementById('mat-dateReq').value='';
+  document.getElementById('mat-status').value='pending';
+  openModal('modal-material');
+}
+function openEditMaterial(id) {
+  const m=state.materials.find(x=>x.id===id); if(!m)return;
+  editMatId=id;
+  document.getElementById('mat-modal-title').textContent='Edit Item';
+  document.getElementById('mat-save-btn').textContent='Save Changes';
+  document.getElementById('mat-name').value=m.name||'';
+  document.getElementById('mat-type').value=m.type||'material';
+  document.getElementById('mat-qty').value=m.qty||'';
+  document.getElementById('mat-unit').value=m.unit||'';
+  document.getElementById('mat-cost').value=m.cost||'';
+  document.getElementById('mat-supplier').value=m.supplier||'';
+  document.getElementById('mat-dateReq').value=m.dateReq||'';
+  document.getElementById('mat-status').value=m.status||'pending';
+  document.getElementById('mat-notes').value=m.notes||'';
+  openModal('modal-material');
+}
+async function saveMaterial() {
+  const m={
+    id:editMatId||Date.now().toString(),
+    name:document.getElementById('mat-name').value,
+    type:document.getElementById('mat-type').value,
+    qty:document.getElementById('mat-qty').value,
+    unit:document.getElementById('mat-unit').value,
+    cost:parseFloat(document.getElementById('mat-cost').value)||0,
+    supplier:document.getElementById('mat-supplier').value,
+    dateReq:document.getElementById('mat-dateReq').value,
+    status:document.getElementById('mat-status').value,
+    notes:document.getElementById('mat-notes').value,
+    addedBy:currentUser?.name||''
+  };
+  if (!m.name) { alert('Enter item name.'); return; }
+  if (editMatId) { const i=state.materials.findIndex(x=>x.id===editMatId); if(i>-1)state.materials[i]=m; }
+  else state.materials.unshift(m);
+  await saveSite(); closeModal('modal-material'); renderMaterials();
+}
+async function deleteMaterial(id) {
+  if(!confirm('Remove this item?'))return;
+  state.materials=state.materials.filter(x=>x.id!==id); await saveSite(); renderMaterials();
+}
+async function updateMatStatus(id,val) {
+  const m=state.materials.find(x=>x.id===id); if(m){m.status=val; await saveSite(); renderMaterials();}
+}
+function renderMaterials() {
+  const wrap=document.getElementById('material-list'); if(!wrap)return;
+  if (!state.materials.length) { wrap.innerHTML=`<div class="empty"><div class="empty-ico">📦</div><p>No materials or services listed yet.</p></div>`; return; }
+  const totalCost=state.materials.reduce((s,m)=>s+m.cost,0);
+  const stCols={pending:'b-amber',ordered:'b-blue',delivered:'b-green',used:'b-gray'};
+  wrap.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    ${['pending','ordered','delivered','used'].map(s=>`<span class="badge ${stCols[s]}" style="padding:5px 12px;font-size:11px;">${s.charAt(0).toUpperCase()+s.slice(1)}: ${state.materials.filter(m=>m.status===s).length}</span>`).join('')}
+    <span class="badge b-purple" style="padding:5px 12px;font-size:11px;background:#ede9fe;color:#6d28d9;">Est. Total: UGX ${totalCost.toLocaleString()}</span>
+  </div>
+  <div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:var(--ink);color:#e5e7eb;">
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">#</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Item / Service</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Type</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Qty</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Est. Cost</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Supplier</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Date Req.</th>
+      <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Status</th>
+      <th style="padding:8px 12px;"></th>
+    </tr></thead>
+    <tbody>${state.materials.map((m,i)=>`<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:9px 12px;"><div style="font-weight:700;">${m.name}</div>${m.notes?`<div style="font-size:10px;color:var(--muted);">${m.notes.slice(0,50)}</div>`:''}</td>
+      <td style="padding:9px 12px;"><span class="badge ${m.type==='service'?'b-purple':'b-blue'}" style="font-size:9px;${m.type==='service'?'background:#ede9fe;color:#6d28d9;':''}">${m.type==='service'?'Service':'Material'}</span></td>
+      <td style="padding:9px 12px;font-size:12px;">${m.qty||'—'} ${m.unit||''}</td>
+      <td style="padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12px;">${m.cost?'UGX '+m.cost.toLocaleString():'—'}</td>
+      <td style="padding:9px 12px;font-size:12px;">${m.supplier||'—'}</td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${fmtDate(m.dateReq)}</td>
+      <td style="padding:9px 12px;">${canEdit()?`<select onchange="updateMatStatus('${m.id}',this.value)" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;">
+        <option value="pending"${m.status==='pending'?' selected':''}>Pending</option>
+        <option value="ordered"${m.status==='ordered'?' selected':''}>Ordered</option>
+        <option value="delivered"${m.status==='delivered'?' selected':''}>Delivered</option>
+        <option value="used"${m.status==='used'?' selected':''}>Used</option>
+      </select>`:`<span class="badge ${stCols[m.status]||'b-gray'}">${m.status}</span>`}</td>
+      <td style="padding:9px 12px;"><div style="display:flex;gap:4px;">${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px;" onclick="openEditMaterial('${m.id}')">✎</button><button class="btn btn-danger btn-sm" style="padding:4px 8px;" onclick="deleteMaterial('${m.id}')">🗑</button>`:''}</div></td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+// ════════════════════════════════════════
+// USER MANAGEMENT (Superior only)
+// ════════════════════════════════════════
+async function fsList(col) {
+  const r = await fetch(`${FB_BASE}/${col}?key=${FB_API_KEY}`);
+  if (!r.ok) return [];
+  const j = await r.json();
+  return (j.documents||[]).map(d=>({id:d.name.split('/').pop(),...Object.fromEntries(Object.entries(d.fields||{}).map(([k,v])=>[k,fromFS(v)]))}));
+}
+async function fsDelete(col,id) {
+  await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`,{method:'DELETE'});
+}
+
+function openAddUser() {
+  ['u-name','u-email','u-pass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('u-role').value='foreman';
+  document.getElementById('u-site').value='all';
+  openModal('modal-user');
+}
+async function saveUser() {
+  const name=document.getElementById('u-name').value;
+  const email=document.getElementById('u-email').value;
+  const pass=document.getElementById('u-pass').value;
+  const role=document.getElementById('u-role').value;
+  const site=document.getElementById('u-site').value;
+  if(!name||!email||!pass){alert('Please fill all fields.');return;}
+  if(pass.length<6){alert('Password must be at least 6 characters.');return;}
+  try {
+    const r=await fetch(`${FB_AUTH}:signUp?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,returnSecureToken:true})});
+    const j=await r.json();
+    if(!r.ok){alert('Error: '+(j.error?.message||'Could not create account'));return;}
+    await fsSet('users',j.localId,{name,email,role,site,createdAt:new Date().toISOString()});
+    closeModal('modal-user'); renderAdmin(); alert(`✓ User "${name}" created successfully!`);
+  } catch(e){alert('Error: '+e.message);}
+}
+async function deleteUser(uid) {
+  if(!confirm('Remove this user profile?'))return;
+  await fsDelete('users',uid); renderAdmin();
+}
+async function renderAdmin() {
+  const wrap=document.getElementById('admin-user-list'); if(!wrap)return;
+  wrap.innerHTML='<div class="empty"><div class="empty-ico">⏳</div><p>Loading users…</p></div>';
+  try {
+    const users=await fsList('users');
+    if(!users.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">👥</div><p>No users yet. Add one above.</p></div>`;return;}
+    const roleColors={superior:'b-red',engineer:'b-blue',foreman:'b-amber',client:'b-gray'};
+    wrap.innerHTML=`<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:var(--ink);color:#e5e7eb;">
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Name</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Email</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Role</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Site</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Created</th>
+          <th style="padding:8px 12px;"></th>
+        </tr></thead>
+        <tbody>${users.map(u=>`<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:9px 12px;font-weight:700;">${u.name||'—'}</td>
+          <td style="padding:9px 12px;font-size:12px;">${u.email||'—'}</td>
+          <td style="padding:9px 12px;"><span class="badge ${roleColors[u.role]||'b-gray'}">${u.role||'—'}</span></td>
+          <td style="padding:9px 12px;font-size:12px;">${u.site==='all'?'All Sites':(SITE_DEFS[u.site]?.name||u.site||'—')}</td>
+          <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${u.createdAt?fmtDate(u.createdAt.slice(0,10)):'—'}</td>
+          <td style="padding:9px 12px;"><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">✕</button></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  } catch(e) { wrap.innerHTML=`<div class="empty"><div class="empty-ico">⚠</div><p>Could not load users.</p></div>`; }
+}
+
+// ════════════════════════════════════════
+// WORD REPORT
+// ════════════════════════════════════════
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+
+async function generateWordReport() {
+  const btn = document.getElementById('btn-word-report');
+  btn.textContent='⏳ Generating…'; btn.disabled=true;
+  try {
+    await loadScript('https://unpkg.com/docx@8.5.0/build/index.js');
+    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,HeadingLevel,WidthType,BorderStyle,ShadingType,AlignmentType} = docx;
+    const p=state.project||{}; const def=SITE_DEFS[activeSite];
+    const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+    const bdr={style:BorderStyle.SINGLE,size:1,color:'DDDDDD'};
+    const bdrs={top:bdr,bottom:bdr,left:bdr,right:bdr};
+    const cell=(txt,bold=false,bg='',w=2250)=>new TableCell({borders:bdrs,width:{size:w,type:WidthType.DXA},shading:bg?{fill:bg,type:ShadingType.CLEAR}:{},margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:String(txt||'—'),bold,font:'Arial',size:20})]})]});
+    const hdr=txt=>new Paragraph({heading:HeadingLevel.HEADING_2,spacing:{before:280,after:80},children:[new TextRun({text:txt,bold:true,color:'1D4ED8',font:'Arial',size:24})]});
+    const par=(txt,bold=false,col='')=>new Paragraph({spacing:{after:60},children:[new TextRun({text:String(txt||''),bold,color:col||undefined,font:'Arial',size:20})]});
+
+    const children=[
+      new Paragraph({heading:HeadingLevel.HEADING_1,children:[new TextRun({text:p.company||'BuildTrack',bold:true,font:'Arial',size:40,color:'F59E0B'})]}),
+      par('Contractor\'s Site Progress Report — '+def.name,true),
+      par('Generated: '+today+'   |   Overall Progress: '+avgPct(state.works)+'%'),
+      new Paragraph({children:[],spacing:{after:200}}),
+      hdr('CONTRACT DETAILS'),
+      new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[2500,6500],rows:[
+        ['Project',p.name||def.name],['Client',p.client||def.defaultProject?.client||'—'],
+        ['Consulting Engineer',p.engineer||'—'],['Site Foreman',p.foreman||'—'],
+        ['Contract Start',fmtDate(p.start)],['Planned Completion',fmtDate(p.end)],
+        ['Contract Sum',p.sum?'USHS '+p.sum:'—'],['Location',def.location]
+      ].map(([k,v])=>new TableRow({children:[cell(k,true,'F3F4F6',2500),cell(v,false,'',6500)]}))}),
+      new Paragraph({children:[],spacing:{after:200}}),
+    ];
+
+    // Works progress
+    if(state.works.length){
+      children.push(hdr('WORKS PROGRESS ('+state.works.filter(w=>w.status==='done'||w.pct===100).length+' of '+state.works.length+' completed)'));
+      children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[4200,1600,1600,1600],rows:[
+        new TableRow({children:[cell('Activity',true,'1E3A5F',4200),cell('Category',true,'1E3A5F',1600),cell('Status',true,'1E3A5F',1600),cell('% Done',true,'1E3A5F',1600)].map(c=>{c.children[0].children[0].children[0]=new TextRun({text:c.children[0].children[0].children[0].text,bold:true,color:'FFFFFF',font:'Arial',size:20});return c;})}),
+        ...state.works.map(w=>{const st=w.status||(w.pct===100?'done':w.pct===0?'notstarted':'inprogress');return new TableRow({children:[cell(w.name,true,'',4200),cell(w.cat,false,'',1600),cell(statusLabel(st),false,'',1600),cell(w.pct+'%',w.pct===100,'',1600)]});})
+      ]}));
+      children.push(new Paragraph({children:[],spacing:{after:200}}));
+    }
+
+    // Expenses
+    if(state.expenses.length){
+      const tot=state.expenses.reduce((s,e)=>s+e.amount,0);
+      const app=state.expenses.filter(e=>e.status==='approved').reduce((s,e)=>s+e.amount,0);
+      children.push(hdr('DAILY EXPENSES'));
+      children.push(par('Total Submitted: UGX '+tot.toLocaleString()+'   |   Total Approved: UGX '+app.toLocaleString()));
+      children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[1500,3000,1500,1800,1200],rows:[
+        new TableRow({children:[cell('Date',true),cell('Description',true),cell('Category',true),cell('Amount',true),cell('Status',true)]}),
+        ...state.expenses.map(ex=>new TableRow({children:[cell(fmtDate(ex.date)),cell(ex.desc),cell(ex.cat),cell('UGX '+ex.amount.toLocaleString()),cell(ex.status)]}))
+      ]}));
+      children.push(new Paragraph({children:[],spacing:{after:200}}));
+    }
+
+    // Materials
+    if(state.materials.length){
+      children.push(hdr('MATERIALS & SERVICES SUPPLY LIST'));
+      children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[2800,1100,1400,1500,1200,1000],rows:[
+        new TableRow({children:[cell('Item / Service',true),cell('Type',true),cell('Qty',true),cell('Est. Cost',true),cell('Supplier',true),cell('Status',true)]}),
+        ...state.materials.map(m=>new TableRow({children:[cell(m.name),cell(m.type),cell((m.qty||'')+(m.unit?' '+m.unit:'')),cell(m.cost?'UGX '+m.cost.toLocaleString():'—'),cell(m.supplier||'—'),cell(m.status)]}))
+      ]}));
+      children.push(new Paragraph({children:[],spacing:{after:200}}));
+    }
+
+    // Daily logs
+    if(state.logs.length){
+      children.push(hdr('DAILY LOG RECORDS ('+state.logs.length+' entries)'));
+      state.logs.slice(0,20).forEach((l,i)=>{
+        const wkrs=l.labour?l.labour.reduce((s,r)=>s+(parseInt(r.count)||0),0):0;
+        children.push(par(`Entry ${state.logs.length-i}: ${fmtDate(l.date)} · ${l.weather} · ${l.supervisor||'—'} · ${wkrs} workers`,true));
+        if(l.workdone) children.push(par('Work Done: '+l.workdone));
+        if(l.materials) children.push(par('Materials: '+l.materials));
+        if(l.problems) children.push(par('Problems: '+l.problems,false,'C00000'));
+        if(l.instructions) children.push(par('Instructions: '+l.instructions));
+        if(l.tomorrow) children.push(par('Plan for Tomorrow: '+l.tomorrow));
+        children.push(new Paragraph({children:[],spacing:{after:100}}));
+      });
+    }
+
+    // Signature
+    children.push(new Paragraph({children:[],spacing:{after:400}}));
+    children.push(par('Prepared by: '+(p.foreman||currentUser?.name||'_____________________')+'     Signature: _____________________     Date: '+today));
+
+    const doc=new Document({styles:{default:{document:{run:{font:'Arial',size:22}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1000,right:1000,bottom:1000,left:1000}}},children}]});
+    const blob=await Packer.toBlob(doc);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=def.name.replace(/\s+/g,'_')+'_Report_'+new Date().toISOString().slice(0,10)+'.docx';a.click();
+    URL.revokeObjectURL(url);
+  } catch(e){ console.error(e); alert('Word report failed: '+e.message); }
+  finally{ btn.textContent='📄 Word Report'; btn.disabled=false; }
+}
+
+// ════════════════════════════════════════
+// STATE
 let activeSite = localStorage.getItem('bt_active') || 'ndeeba';
 let activeFilter = 'all';
 let editActId = null;
 let editLogId = null;
-let state = { project: null, works: [], logs: [], labour: [], instructions: [] };
+let state = { project: null, works: [], logs: [], labour: [], instructions: [], expenses: [], materials: [] };
 
 // ── Default / localStorage fallback for a site ──
 function defaultSiteData(k) {
   const raw = localStorage.getItem('bt_' + k);
-  if (raw) { try { return JSON.parse(raw); } catch(e) {} }
+  if (raw) { try { const d=JSON.parse(raw); d.expenses=d.expenses||[]; d.materials=d.materials||[]; return d; } catch(e) {} }
   const d = SITE_DEFS[k];
-  return { project: { ...d.defaultProject }, works: d.defaultWorks.map(w => ({ ...w })), logs: [], labour: [], instructions: [] };
+  return { project: { ...d.defaultProject }, works: d.defaultWorks.map(w => ({ ...w })), logs: [], labour: [], instructions: [], expenses: [], materials: [] };
 }
 
 // ── Save active site to Firestore + localStorage ──
@@ -742,9 +1540,10 @@ async function saveSite() {
     logs:         state.logs         || [],
     labour:       state.labour       || [],
     instructions: state.instructions || [],
+    expenses:     state.expenses     || [],
+    materials:    state.materials    || [],
     updatedAt:    new Date().toISOString()
   };
-  // always save locally first so work is never lost
   localStorage.setItem('bt_' + activeSite, JSON.stringify(data));
   try {
     await fsSet('sites', activeSite, data);
@@ -767,21 +1566,25 @@ async function loadSite(k) {
       state.logs         = data.logs         || [];
       state.labour       = data.labour       || [];
       state.instructions = data.instructions || [];
-      // update localStorage cache
+      state.expenses     = data.expenses     || [];
+      state.materials    = data.materials    || [];
       localStorage.setItem('bt_' + k, JSON.stringify(data));
     } else {
-      // First time for this site — seed defaults
       const def = defaultSiteData(k);
       state.project = def.project; state.works = def.works;
-      state.logs = def.logs; state.labour = def.labour; state.instructions = def.instructions;
-      await saveSite(); // write defaults to Firestore
+      state.logs = def.logs; state.labour = def.labour;
+      state.instructions = def.instructions;
+      state.expenses = []; state.materials = [];
+      await saveSite();
     }
     setSyncStatus('live');
   } catch(e) {
     console.warn('Firestore load failed, using localStorage:', e);
     const def = defaultSiteData(k);
     state.project = def.project; state.works = def.works;
-    state.logs = def.logs; state.labour = def.labour; state.instructions = def.instructions;
+    state.logs = def.logs; state.labour = def.labour;
+    state.instructions = def.instructions;
+    state.expenses = def.expenses||[]; state.materials = def.materials||[];
     setSyncStatus('error');
   }
 }
@@ -822,9 +1625,12 @@ function goPage(page, el){
   document.getElementById('page-'+page).classList.add('active');
   if(page==='activities') renderActivitiesPage();
   if(page==='daily') renderDaily();
+  if(page==='expenses') renderExpenses();
+  if(page==='materials') renderMaterials();
   if(page==='labour') renderLabour();
   if(page==='instructions') renderInstructions();
   if(page==='report') renderReport();
+  if(page==='admin') renderAdmin();
 }
 
 // ════════════════════════════════════════
@@ -1056,14 +1862,16 @@ function getLabourRows(){
 }
 function openNewLog(){
   editLogId=null;
+  pendingPhotos=[];
   document.getElementById('log-modal-title').textContent='New Daily Site Log';
   document.getElementById('l-date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('l-supervisor').value=state.project?.foreman||'';
+  document.getElementById('l-supervisor').value=currentUser?.name||state.project?.foreman||'';
   document.getElementById('l-weather').selectedIndex=0;
   document.getElementById('l-status').selectedIndex=0;
   ['l-workdone','l-materials','l-problems','l-instructions','l-plant','l-tomorrow'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('log-labour-rows').innerHTML='';
   addLabourRow();
+  renderPhotoGrid();
   openModal('modal-log');
 }
 async function saveLog(){
@@ -1079,11 +1887,14 @@ async function saveLog(){
     instructions:document.getElementById('l-instructions').value,
     plant:document.getElementById('l-plant').value,
     tomorrow:document.getElementById('l-tomorrow').value,
-    labour:getLabourRows()
+    labour:getLabourRows(),
+    photos:[...pendingPhotos],
+    submittedBy:currentUser?.name||''
   };
   if(!log.date){alert('Set a date.');return;}
   if(editLogId){const i=state.logs.findIndex(l=>l.id===editLogId);if(i>-1)state.logs[i]=log;}
   else state.logs.unshift(log);
+  pendingPhotos=[];
   await saveSite();closeModal('modal-log');renderDaily();
 }
 async function deleteLog(id){if(!confirm('Delete this log?'))return;state.logs=state.logs.filter(l=>l.id!==id);await saveSite();renderDaily();}
@@ -1094,6 +1905,7 @@ function toggleLog(id){
 function editLog(id){
   const l=state.logs.find(x=>x.id===id);if(!l)return;
   editLogId=id;
+  pendingPhotos=[...(l.photos||[])];
   document.getElementById('log-modal-title').textContent='Edit Daily Log';
   document.getElementById('l-date').value=l.date;
   document.getElementById('l-supervisor').value=l.supervisor;
@@ -1108,6 +1920,7 @@ function editLog(id){
   const wrap=document.getElementById('log-labour-rows');wrap.innerHTML='';
   (l.labour||[]).forEach(r=>{addLabourRow();const rows=wrap.querySelectorAll('.labour-row');const last=rows[rows.length-1];const f=last.querySelectorAll('select,input');f[0].value=r.trade;f[1].value=r.name;f[2].value=r.count;f[3].value=r.hours;});
   if(!l.labour||!l.labour.length)addLabourRow();
+  renderPhotoGrid();
   openModal('modal-log');
 }
 function renderDaily(){
@@ -1138,10 +1951,11 @@ function renderDaily(){
         ${l.instructions?`<div class="log-field"><div class="log-field-label amber">📌 Instructions Received</div><div class="log-text">${l.instructions}</div></div>`:''}
         ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue">📅 Tomorrow</div><div class="log-text">${l.tomorrow}</div></div>`:''}
         ${l.labour&&l.labour.length?`<div class="log-field"><div class="log-field-label">👷 Labour (${wkrs} workers)</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.labour.map(r=>`<span class="badge b-gray">${r.trade} ×${r.count}${r.name?' ('+r.name+')':''}</span>`).join('')}</div></div>`:''}
-        <div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+        ${renderLogPhotos(l.photos)}
+        ${canEdit()?`<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
           <button class="btn btn-ghost btn-sm" onclick="editLog('${l.id}')">✎ Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">✕ Delete</button>
-        </div>
+        </div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1295,10 +2109,20 @@ function renderReport(){
 // INIT
 // ════════════════════════════════════════
 (async () => {
-  renderStationTabs();
-  await loadSite(activeSite);
-  renderStationTabs();
-  renderActivitiesPage();
+  // Restore saved session
+  const saved = localStorage.getItem('bt_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      document.getElementById('login-screen').style.display = 'none';
+      startApp();
+    } catch(e) {
+      localStorage.removeItem('bt_user');
+    }
+  }
+  // Allow Enter key to submit login
+  document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
 })();
 </script>
 </body>
