@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1082,7 +1083,7 @@ function fromFS(fv) {
 // ── GET document from Firestore ──
 async function fsGet(collection, docId) {
   const url = `${FB_BASE}/${collection}/${docId}?key=${FB_API_KEY}`;
-  const res = await fetch(url);
+  const res = await authFetch(url);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Firestore GET failed: ${res.status}`);
   const json = await res.json();
@@ -1093,7 +1094,7 @@ async function fsGet(collection, docId) {
 async function fsSet(collection, docId, data) {
   const url = `${FB_BASE}/${collection}/${docId}?key=${FB_API_KEY}`;
   const body = { fields: Object.fromEntries(Object.entries(data).map(([k,v])=>[k,toFS(v)])) };
-  const res = await fetch(url, {
+  const res = await authFetch(url, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
@@ -1124,7 +1125,42 @@ function setSyncStatus(status) {
 // FIREBASE AUTH
 // ════════════════════════════════════════
 const FB_AUTH = `https://identitytoolkit.googleapis.com/v1/accounts`;
-let currentUser = null; // {uid, email, name, role, site, idToken}
+const FB_REFRESH = `https://securetoken.googleapis.com/v1/token`;
+let currentUser = null; // {uid, email, name, role, site, idToken, refreshToken}
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escAttr(v) { return esc(v).replace(/`/g, '&#96;'); }
+function jsArg(v) {
+  return String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n\u2028\u2029]/g, ' ');
+}
+
+async function refreshAuthToken() {
+  if (!currentUser?.refreshToken) return false;
+  const res = await fetch(`${FB_REFRESH}?key=${FB_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: currentUser.refreshToken })
+  });
+  if (!res.ok) return false;
+  const j = await res.json();
+  currentUser.idToken = j.id_token;
+  currentUser.refreshToken = j.refresh_token || currentUser.refreshToken;
+  localStorage.setItem('bt_user', JSON.stringify(currentUser));
+  return true;
+}
+
+async function authFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (currentUser?.idToken) headers.Authorization = `Bearer ${currentUser.idToken}`;
+  let res = await fetch(url, { ...options, headers });
+  if ((res.status === 401 || res.status === 403) && await refreshAuthToken()) {
+    const retryHeaders = { ...(options.headers || {}), Authorization: `Bearer ${currentUser.idToken}` };
+    res = await fetch(url, { ...options, headers: retryHeaders });
+  }
+  return res;
+}
 
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
@@ -1143,9 +1179,10 @@ async function doLogin() {
       errEl.textContent = msg.includes('EMAIL_NOT_FOUND')||msg.includes('INVALID_PASSWORD')||msg.includes('INVALID_LOGIN_CREDENTIALS') ? 'Incorrect email or password.' : (msg||'Login failed.');
       errEl.style.display='block'; return;
     }
+    currentUser = {uid:j.localId, email:j.email, name:j.email, role:'client', site:'all', idToken:j.idToken, refreshToken:j.refreshToken};
     const profile = await fsGet('users', j.localId);
-    if (!profile) { errEl.textContent='Account not set up. Contact your administrator.'; errEl.style.display='block'; return; }
-    currentUser = {uid:j.localId, email:j.email, name:profile.name||j.email, role:profile.role||'foreman', site:profile.site||'all', idToken:j.idToken};
+    if (!profile) { currentUser=null; errEl.textContent='Account not set up. Contact your administrator.'; errEl.style.display='block'; return; }
+    currentUser = {uid:j.localId, email:j.email, name:profile.name||j.email, role:profile.role||'foreman', site:profile.site||'all', idToken:j.idToken, refreshToken:j.refreshToken};
     localStorage.setItem('bt_user', JSON.stringify(currentUser));
     startApp();
   } catch(e) { errEl.textContent='Network error. Check your connection.'; errEl.style.display='block'; }
@@ -1180,8 +1217,8 @@ async function doSignUp() {
   const name  = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const pass  = document.getElementById('reg-pass').value;
-  const role  = selectedRole;
-  const site  = role === 'foreman' ? (document.getElementById('reg-site').value || 'all') : 'all';
+  const role  = 'client';
+  const site  = 'all';
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
 
@@ -1201,10 +1238,9 @@ async function doSignUp() {
       errEl.textContent = msg.includes('EMAIL_EXISTS') ? 'An account with this email already exists. Please sign in.' : (msg || 'Could not create account.');
       errEl.style.display='block'; return;
     }
-    // Save profile to Firestore
-    await fsSet('users', j.localId, { name, email, role, site, createdAt: new Date().toISOString(), status: 'active' });
-    // Auto sign in
-    currentUser = { uid:j.localId, email:j.email, name, role, site, idToken:j.idToken };
+    currentUser = { uid:j.localId, email:j.email, name, role, site, idToken:j.idToken, refreshToken:j.refreshToken };
+    // Save profile to Firestore. Elevated roles must be assigned later by a superior/admin.
+    await fsSet('users', j.localId, { name, email, role, site, requestedRole:selectedRole, createdAt: new Date().toISOString(), status: 'pending' });
     localStorage.setItem('bt_user', JSON.stringify(currentUser));
     startApp();
   } catch(e) {
@@ -1214,14 +1250,22 @@ async function doSignUp() {
 }
 // ── Sign Out ──
 function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('bt_user');
   document.getElementById('btn-logout').style.display='none';
   document.getElementById('user-name-hd').style.display='none';
   document.getElementById('user-role-badge').style.display='none';
+  const chip = document.getElementById('user-chip');
+  if (chip) chip.style.display='none';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-screen').style.display='flex';
 }
 
 function startApp() {
   document.getElementById('login-screen').style.display='none';
   document.getElementById('btn-logout').style.display='';
+  document.getElementById('tab-admin').style.display='none';
+  document.getElementById('btn-word-report').style.display='none';
   const nhd = document.getElementById('user-name-hd');
   nhd.textContent = currentUser.name;
   const chip = document.getElementById('user-chip');
@@ -1284,7 +1328,7 @@ function renderPhotoGrid() {
   if (!grid) return;
   const thumbs = pendingPhotos.map((p,i) => `
     <div style="position:relative;">
-      <img src="${p.dataUrl}" class="photo-thumb" onclick="viewPhoto('${p.dataUrl}')" title="${p.name}">
+      <img src="${escAttr(p.dataUrl)}" class="photo-thumb" onclick="viewPhoto('${jsArg(p.dataUrl)}')" title="${escAttr(p.name)}">
       <button onclick="removePhoto(${i})" style="position:absolute;top:-5px;right:-5px;background:var(--danger);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>`).join('');
   grid.innerHTML = thumbs + (pendingPhotos.length < 5 ? `<label class="photo-upload-btn" for="photo-file-input" title="Add photo">+</label><input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(this)">` : '');
@@ -1302,7 +1346,7 @@ function renderLogPhotos(photos) {
   return `<div class="log-field">
     <div class="log-field-label">📸 Site Photos (${photos.length})</div>
     <div class="photo-grid" style="margin-top:6px;">
-      ${photos.map(p=>`<img src="${p.dataUrl}" class="photo-thumb" onclick="viewPhoto('${p.dataUrl}')" title="${p.name||'Photo'}">`).join('')}
+      ${photos.map(p=>`<img src="${escAttr(p.dataUrl)}" class="photo-thumb" onclick="viewPhoto('${jsArg(p.dataUrl)}')" title="${escAttr(p.name||'Photo')}">`).join('')}
     </div>
   </div>`;
 }
@@ -1372,15 +1416,15 @@ function renderExpenses() {
     </tr></thead>
     <tbody>${state.expenses.map(ex=>`<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:11px;">${fmtDate(ex.date)}</td>
-      <td style="padding:9px 12px;font-weight:700;">${ex.desc}${ex.receipt?`<div style="font-size:10px;color:var(--muted);">Ref: ${ex.receipt}</div>`:''}</td>
-      <td style="padding:9px 12px;"><span class="badge b-blue" style="font-size:9px;">${ex.cat}</span></td>
+      <td style="padding:9px 12px;font-weight:700;">${esc(ex.desc)}${ex.receipt?`<div style="font-size:10px;color:var(--muted);">Ref: ${esc(ex.receipt)}</div>`:''}</td>
+      <td style="padding:9px 12px;"><span class="badge b-blue" style="font-size:9px;">${esc(ex.cat)}</span></td>
       <td style="padding:9px 12px;font-weight:700;font-family:'Roboto Mono',monospace;">UGX ${ex.amount.toLocaleString()}</td>
-      <td style="padding:9px 12px;font-size:12px;">${ex.supplier||'—'}</td>
-      <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${ex.submittedBy||'—'}</td>
-      <td style="padding:9px 12px;"><span class="badge ${sc[ex.status]||'b-gray'}">${ex.status}</span>${ex.approvedBy?`<div style="font-size:9px;color:var(--muted);">by ${ex.approvedBy}</div>`:''}</td>
+      <td style="padding:9px 12px;font-size:12px;">${esc(ex.supplier||'—')}</td>
+      <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${esc(ex.submittedBy||'—')}</td>
+      <td style="padding:9px 12px;"><span class="badge ${escAttr(sc[ex.status]||'b-gray')}">${esc(ex.status)}</span>${ex.approvedBy?`<div style="font-size:9px;color:var(--muted);">by ${esc(ex.approvedBy)}</div>`:''}</td>
       <td style="padding:9px 12px;"><div style="display:flex;gap:4px;flex-wrap:wrap;">
-        ${canApprove()&&ex.status==='pending'?`<button class="btn btn-sm" style="background:var(--success);color:white;padding:4px 10px;" onclick="approveExpense('${ex.id}')">✓</button><button class="btn btn-danger btn-sm" style="padding:4px 10px;" onclick="rejectExpense('${ex.id}')">✕</button>`:''}
-        ${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="deleteExpense('${ex.id}')">🗑</button>`:''}
+        ${canApprove()&&ex.status==='pending'?`<button class="btn btn-sm" style="background:var(--success);color:white;padding:4px 10px;" onclick="approveExpense('${jsArg(ex.id)}')">✓</button><button class="btn btn-danger btn-sm" style="padding:4px 10px;" onclick="rejectExpense('${jsArg(ex.id)}')">✕</button>`:''}
+        ${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="deleteExpense('${jsArg(ex.id)}')">🗑</button>`:''}
       </div></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -1467,19 +1511,19 @@ function renderMaterials() {
     </tr></thead>
     <tbody>${state.materials.map((m,i)=>`<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);">${String(i+1).padStart(2,'0')}</td>
-      <td style="padding:9px 12px;"><div style="font-weight:700;">${m.name}</div>${m.notes?`<div style="font-size:10px;color:var(--muted);">${m.notes.slice(0,50)}</div>`:''}</td>
+      <td style="padding:9px 12px;"><div style="font-weight:700;">${esc(m.name)}</div>${m.notes?`<div style="font-size:10px;color:var(--muted);">${esc(m.notes.slice(0,50))}</div>`:''}</td>
       <td style="padding:9px 12px;"><span class="badge ${m.type==='service'?'b-purple':'b-blue'}" style="font-size:9px;${m.type==='service'?'background:#ede9fe;color:#6d28d9;':''}">${m.type==='service'?'Service':'Material'}</span></td>
-      <td style="padding:9px 12px;font-size:12px;">${m.qty||'—'} ${m.unit||''}</td>
+      <td style="padding:9px 12px;font-size:12px;">${esc(m.qty||'—')} ${esc(m.unit||'')}</td>
       <td style="padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12px;">${m.cost?'UGX '+m.cost.toLocaleString():'—'}</td>
-      <td style="padding:9px 12px;font-size:12px;">${m.supplier||'—'}</td>
+      <td style="padding:9px 12px;font-size:12px;">${esc(m.supplier||'—')}</td>
       <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${fmtDate(m.dateReq)}</td>
-      <td style="padding:9px 12px;">${canEdit()?`<select onchange="updateMatStatus('${m.id}',this.value)" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;">
+      <td style="padding:9px 12px;">${canEdit()?`<select onchange="updateMatStatus('${jsArg(m.id)}',this.value)" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;">
         <option value="pending"${m.status==='pending'?' selected':''}>Pending</option>
         <option value="ordered"${m.status==='ordered'?' selected':''}>Ordered</option>
         <option value="delivered"${m.status==='delivered'?' selected':''}>Delivered</option>
         <option value="used"${m.status==='used'?' selected':''}>Used</option>
-      </select>`:`<span class="badge ${stCols[m.status]||'b-gray'}">${m.status}</span>`}</td>
-      <td style="padding:9px 12px;"><div style="display:flex;gap:4px;">${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px;" onclick="openEditMaterial('${m.id}')">✎</button><button class="btn btn-danger btn-sm" style="padding:4px 8px;" onclick="deleteMaterial('${m.id}')">🗑</button>`:''}</div></td>
+      </select>`:`<span class="badge ${escAttr(stCols[m.status]||'b-gray')}">${esc(m.status)}</span>`}</td>
+      <td style="padding:9px 12px;"><div style="display:flex;gap:4px;">${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px;" onclick="openEditMaterial('${jsArg(m.id)}')">✎</button><button class="btn btn-danger btn-sm" style="padding:4px 8px;" onclick="deleteMaterial('${jsArg(m.id)}')">🗑</button>`:''}</div></td>
     </tr>`).join('')}
     </tbody>
   </table></div>`;
@@ -1489,22 +1533,24 @@ function renderMaterials() {
 // USER MANAGEMENT (Superior only)
 // ════════════════════════════════════════
 async function fsList(col) {
-  const r = await fetch(`${FB_BASE}/${col}?key=${FB_API_KEY}`);
+  const r = await authFetch(`${FB_BASE}/${col}?key=${FB_API_KEY}`);
   if (!r.ok) return [];
   const j = await r.json();
   return (j.documents||[]).map(d=>({id:d.name.split('/').pop(),...Object.fromEntries(Object.entries(d.fields||{}).map(([k,v])=>[k,fromFS(v)]))}));
 }
 async function fsDelete(col,id) {
-  await fetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`,{method:'DELETE'});
+  await authFetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`,{method:'DELETE'});
 }
 
 function openAddUser() {
+  if (currentUser?.role !== 'superior') { alert('Only a superior can add users.'); return; }
   ['u-name','u-email','u-pass'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('u-role').value='foreman';
   document.getElementById('u-site').value='all';
   openModal('modal-user');
 }
 async function saveUser() {
+  if (currentUser?.role !== 'superior') { alert('Only a superior can add users.'); return; }
   const name=document.getElementById('u-name').value;
   const email=document.getElementById('u-email').value;
   const pass=document.getElementById('u-pass').value;
@@ -1521,6 +1567,7 @@ async function saveUser() {
   } catch(e){alert('Error: '+e.message);}
 }
 async function deleteUser(uid) {
+  if (currentUser?.role !== 'superior') { alert('Only a superior can remove users.'); return; }
   if(!confirm('Remove this user profile?'))return;
   await fsDelete('users',uid); renderAdmin();
 }
@@ -1542,12 +1589,12 @@ async function renderAdmin() {
           <th style="padding:8px 12px;"></th>
         </tr></thead>
         <tbody>${users.map(u=>`<tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:9px 12px;font-weight:700;">${u.name||'—'}</td>
-          <td style="padding:9px 12px;font-size:12px;">${u.email||'—'}</td>
-          <td style="padding:9px 12px;"><span class="badge ${roleColors[u.role]||'b-gray'}">${u.role||'—'}</span></td>
-          <td style="padding:9px 12px;font-size:12px;">${u.site==='all'?'All Sites':(SITE_DEFS[u.site]?.name||u.site||'—')}</td>
+          <td style="padding:9px 12px;font-weight:700;">${esc(u.name||'—')}</td>
+          <td style="padding:9px 12px;font-size:12px;">${esc(u.email||'—')}</td>
+          <td style="padding:9px 12px;"><span class="badge ${escAttr(roleColors[u.role]||'b-gray')}">${esc(u.role||'—')}</span></td>
+          <td style="padding:9px 12px;font-size:12px;">${esc(u.site==='all'?'All Sites':(SITE_DEFS[u.site]?.name||u.site||'—'))}</td>
           <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${u.createdAt?fmtDate(u.createdAt.slice(0,10)):'—'}</td>
-          <td style="padding:9px 12px;"><button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">✕</button></td>
+          <td style="padding:9px 12px;"><button class="btn btn-danger btn-sm" onclick="deleteUser('${jsArg(u.id)}')">✕</button></td>
         </tr>`).join('')}</tbody>
       </table>
     </div>`;
@@ -1949,30 +1996,30 @@ async function renderProjects() {
   wrap.innerHTML = projects.map(p => {
     const daysLeft = p.end ? Math.ceil((new Date(p.end) - new Date()) / 86400000) : null;
     const daysLabel = daysLeft === null ? '' : daysLeft < 0 ? `<span class="badge b-red">${Math.abs(daysLeft)}d overdue</span>` : daysLeft === 0 ? `<span class="badge b-red">Due today</span>` : daysLeft <= 7 ? `<span class="badge b-amber">${daysLeft}d left</span>` : `<span class="badge b-green">${daysLeft}d left</span>`;
-    return `<div style="background:white;border:1px solid var(--border);border-left:5px solid ${p.color||'#f59e0b'};border-radius:10px;padding:16px 18px;margin-bottom:12px;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseleave="this.style.boxShadow='none'">
+    return `<div style="background:white;border:1px solid var(--border);border-left:5px solid ${escAttr(p.color||'#f59e0b')};border-radius:10px;padding:16px 18px;margin-bottom:12px;transition:box-shadow .15s;" onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'" onmouseleave="this.style.boxShadow='none'">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div style="flex:1;min-width:200px;">
-          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px;">${p.name}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px;">${esc(p.name)}</div>
           <div style="font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
-            ${p.client ? `<span>👤 ${p.client}</span>` : ''}
-            ${p.location ? `<span>📍 ${p.location}</span>` : ''}
-            ${p.engineer ? `<span>🔵 ${p.engineer}</span>` : ''}
-            ${p.foreman ? `<span>🟡 ${p.foreman}</span>` : ''}
+            ${p.client ? `<span>👤 ${esc(p.client)}</span>` : ''}
+            ${p.location ? `<span>📍 ${esc(p.location)}</span>` : ''}
+            ${p.engineer ? `<span>🔵 ${esc(p.engineer)}</span>` : ''}
+            ${p.foreman ? `<span>🟡 ${esc(p.foreman)}</span>` : ''}
           </div>
-          ${p.desc ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">${p.desc}</div>` : ''}
+          ${p.desc ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">${esc(p.desc)}</div>` : ''}
           <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
             ${p.start ? `<span style="font-size:11px;color:var(--muted);">📅 ${fmtDate(p.start)} → ${fmtDate(p.end)}</span>` : ''}
-            ${p.sum ? `<span class="badge b-blue" style="font-size:10px;">USHS ${p.sum}</span>` : ''}
+            ${p.sum ? `<span class="badge b-blue" style="font-size:10px;">USHS ${esc(p.sum)}</span>` : ''}
             ${daysLabel}
           </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="btn btn-ghost btn-sm" onclick="openEditProject('${p.id}')">✎ Edit</button>
-          ${currentUser?.role==='superior' ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')">🗑</button>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="openEditProject('${jsArg(p.id)}')">✎ Edit</button>
+          ${currentUser?.role==='superior' ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${jsArg(p.id)}')">🗑</button>` : ''}
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);">
-        <span>Added by ${p.createdBy||'—'}</span>
+        <span>Added by ${esc(p.createdBy||'—')}</span>
         <span>·</span>
         <span>${p.createdAt ? fmtDate(p.createdAt.slice(0,10)) : '—'}</span>
       </div>
@@ -2065,20 +2112,20 @@ function renderActivityList(){
       <circle cx="26" cy="26" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="5"/>
       <circle cx="26" cy="26" r="${r}" fill="none" stroke="${ringColor}" stroke-width="5" stroke-dasharray="${dash} ${circ}" stroke-linecap="round"/>
     </svg>`;
-    return `<div class="activity-item status-${st}">
+	    return `<div class="activity-item status-${escAttr(st)}">
       <div class="act-info">
         <div class="act-name">
           <span style="font-size:12px;font-family:'Roboto Mono',monospace;color:var(--muted);">${String(i+1).padStart(2,'0')}</span>
-          ${w.name}
-          ${w.blockers&&w.blockers.trim()?'<span title="'+w.blockers+'" style="color:var(--danger);font-size:13px;cursor:help;">⚠</span>':''}
+	          ${esc(w.name)}
+	          ${w.blockers&&w.blockers.trim()?'<span title="'+escAttr(w.blockers)+'" style="color:var(--danger);font-size:13px;cursor:help;">⚠</span>':''}
         </div>
         <div class="act-meta">
-          <span class="act-cat">${w.cat}</span>
+	          <span class="act-cat">${esc(w.cat)}</span>
           ${w.startdate?`<span>Started: ${fmtDate(w.startdate)}</span>`:''}
           ${w.enddate?`<span style="color:#16a34a;">✓ Done: ${fmtDate(w.enddate)}</span>`:''}
         </div>
-        ${w.completion?`<div class="act-completion">✓ ${w.completion}</div>`:''}
-        ${w.notes&&!w.completion?`<div class="act-notes">${w.notes.slice(0,90)}${w.notes.length>90?'…':''}</div>`:''}
+	        ${w.completion?`<div class="act-completion">✓ ${esc(w.completion)}</div>`:''}
+	        ${w.notes&&!w.completion?`<div class="act-notes">${esc(w.notes.slice(0,90))}${w.notes.length>90?'…':''}</div>`:''}
       </div>
       <div class="act-pct-col">
         <div style="position:relative;width:52px;height:52px;margin:0 auto;">
@@ -2087,16 +2134,16 @@ function renderActivityList(){
         </div>
       </div>
       <div class="act-status-col">
-        <select class="status-select s-${st}" onchange="quickStatusChange('${w.id}',this.value)">
+	        <select class="status-select s-${escAttr(st)}" onchange="quickStatusChange('${jsArg(w.id)}',this.value)">
           <option value="notstarted" ${st==='notstarted'?'selected':''}>⬜ Not Started</option>
           <option value="inprogress" ${st==='inprogress'?'selected':''}>🔄 In Progress</option>
           <option value="done" ${st==='done'?'selected':''}>✅ Completed</option>
           <option value="onhold" ${st==='onhold'?'selected':''}>🔴 On Hold</option>
         </select>
-        ${st==='inprogress'?`<input type="range" min="0" max="100" value="${w.pct}" oninput="quickPctChange('${w.id}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
+	        ${st==='inprogress'?`<input type="range" min="0" max="100" value="${escAttr(w.pct)}" oninput="quickPctChange('${jsArg(w.id)}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
       </div>
       <div class="act-btn-col">
-        <button class="act-edit-btn" onclick="openEditAct('${w.id}')" title="Update details">✎</button>
+	        <button class="act-edit-btn" onclick="openEditAct('${jsArg(w.id)}')" title="Update details">✎</button>
       </div>
     </div>`;
   }).join('');
@@ -2264,30 +2311,30 @@ function renderDaily(){
   wrap.innerHTML=state.logs.map((l,i)=>{
     const wkrs=l.labour?l.labour.reduce((s,r)=>s+(parseInt(r.count)||0),0):0;
     return`<div class="log-card">
-      <div class="log-card-hd" onclick="toggleLog('${l.id}')">
+      <div class="log-card-hd" onclick="toggleLog('${jsArg(l.id)}')">
         <div>
           <div style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--accent);font-weight:500;">${fmtDate(l.date)}</div>
-          <div style="font-weight:700;font-size:14px;margin-top:2px;">${l.workdone?l.workdone.slice(0,65)+(l.workdone.length>65?'…':''):'Daily Log'}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${l.supervisor||'—'} · ${l.weather} · ${wkrs} workers</div>
+          <div style="font-weight:700;font-size:14px;margin-top:2px;">${l.workdone?esc(l.workdone.slice(0,65))+(l.workdone.length>65?'…':''):'Daily Log'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(l.supervisor||'—')} · ${esc(l.weather)} · ${wkrs} workers</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge ${sbMap[l.status]||'b-gray'}">${stMap[l.status]||l.status}</span>
+          <span class="badge ${escAttr(sbMap[l.status]||'b-gray')}">${esc(stMap[l.status]||l.status)}</span>
           ${l.problems?'<span class="badge b-red">⚠ Issues</span>':''}
-          <span id="la-${l.id}" style="color:var(--muted);font-size:16px;">▾</span>
+          <span id="la-${escAttr(l.id)}" style="color:var(--muted);font-size:16px;">▾</span>
         </div>
       </div>
-      <div class="log-body" id="lb-${l.id}">
-        ${l.workdone?`<div class="log-field"><div class="log-field-label green">✅ Work Done Today</div><div class="log-text">${l.workdone}</div></div>`:''}
-        ${l.materials?`<div class="log-field"><div class="log-field-label blue">📦 Materials</div><div class="log-text">${l.materials}</div></div>`:''}
-        ${l.plant?`<div class="log-field"><div class="log-field-label">🏗 Plant & Equipment</div><div class="log-text">${l.plant}</div></div>`:''}
-        ${l.problems?`<div class="log-field"><div class="log-field-label red">🔴 Problems</div><div class="log-text" style="color:#dc2626;">${l.problems}</div></div>`:''}
-        ${l.instructions?`<div class="log-field"><div class="log-field-label amber">📌 Instructions Received</div><div class="log-text">${l.instructions}</div></div>`:''}
-        ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue">📅 Tomorrow</div><div class="log-text">${l.tomorrow}</div></div>`:''}
-        ${l.labour&&l.labour.length?`<div class="log-field"><div class="log-field-label">👷 Labour (${wkrs} workers)</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.labour.map(r=>`<span class="badge b-gray">${r.trade} ×${r.count}${r.name?' ('+r.name+')':''}</span>`).join('')}</div></div>`:''}
+      <div class="log-body" id="lb-${escAttr(l.id)}">
+        ${l.workdone?`<div class="log-field"><div class="log-field-label green">✅ Work Done Today</div><div class="log-text">${esc(l.workdone)}</div></div>`:''}
+        ${l.materials?`<div class="log-field"><div class="log-field-label blue">📦 Materials</div><div class="log-text">${esc(l.materials)}</div></div>`:''}
+        ${l.plant?`<div class="log-field"><div class="log-field-label">🏗 Plant & Equipment</div><div class="log-text">${esc(l.plant)}</div></div>`:''}
+        ${l.problems?`<div class="log-field"><div class="log-field-label red">🔴 Problems</div><div class="log-text" style="color:#dc2626;">${esc(l.problems)}</div></div>`:''}
+        ${l.instructions?`<div class="log-field"><div class="log-field-label amber">📌 Instructions Received</div><div class="log-text">${esc(l.instructions)}</div></div>`:''}
+        ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue">📅 Tomorrow</div><div class="log-text">${esc(l.tomorrow)}</div></div>`:''}
+        ${l.labour&&l.labour.length?`<div class="log-field"><div class="log-field-label">👷 Labour (${wkrs} workers)</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.labour.map(r=>`<span class="badge b-gray">${esc(r.trade)} ×${esc(r.count)}${r.name?' ('+esc(r.name)+')':''}</span>`).join('')}</div></div>`:''}
         ${renderLogPhotos(l.photos)}
         ${canEdit()?`<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
-          <button class="btn btn-ghost btn-sm" onclick="editLog('${l.id}')">✎ Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">✕ Delete</button>
+          <button class="btn btn-ghost btn-sm" onclick="editLog('${jsArg(l.id)}')">✎ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteLog('${jsArg(l.id)}')">✕ Delete</button>
         </div>`:''}
       </div>
     </div>`;
@@ -2311,15 +2358,15 @@ function renderLabour(){
   wrap.innerHTML=types.map(type=>{
     const ws=state.labour.filter(l=>l.type===type);
     return`<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
-      <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:700;font-size:13px;">👷 ${type} (${ws.length})</div>
+      <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:700;font-size:13px;">👷 ${esc(type)} (${ws.length})</div>
       <table class="t">
         <thead><tr><th>Name</th><th>Trade</th><th>Phone</th><th>Notes</th><th></th></tr></thead>
         <tbody>${ws.map(w=>`<tr>
-          <td style="font-weight:700;">${w.name}</td>
-          <td><span class="badge b-blue">${w.trade}</span></td>
-          <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${w.phone||'—'}</td>
-          <td style="font-size:11px;color:var(--muted);">${w.notes||'—'}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="deleteLabour('${w.id}')">✕</button></td>
+          <td style="font-weight:700;">${esc(w.name)}</td>
+          <td><span class="badge b-blue">${esc(w.trade)}</span></td>
+          <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${esc(w.phone||'—')}</td>
+          <td style="font-size:11px;color:var(--muted);">${esc(w.notes||'—')}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteLabour('${jsArg(w.id)}')">✕</button></td>
         </tr>`).join('')}</tbody>
       </table>
     </div>`;
@@ -2346,12 +2393,12 @@ function renderInstructions(){
     <div class="instr-card">
       <div class="instr-card-hd">
         <div>
-          <div style="font-weight:700;font-size:13px;">${ins.type} — ${fmtDate(ins.date)}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">From: ${ins.from||'—'}</div>
+          <div style="font-weight:700;font-size:13px;">${esc(ins.type)} — ${fmtDate(ins.date)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">From: ${esc(ins.from||'—')}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge ${ibm[ins.status]||'b-gray'}">${ibt[ins.status]||ins.status}</span>
-          <select onchange="updateInstrStatus('${ins.id}',this.value)" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'Nunito Sans',sans-serif;">
+          <span class="badge ${escAttr(ibm[ins.status]||'b-gray')}">${esc(ibt[ins.status]||ins.status)}</span>
+          <select onchange="updateInstrStatus('${jsArg(ins.id)}',this.value)" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-family:'Nunito Sans',sans-serif;">
             <option value="open" ${ins.status==='open'?'selected':''}>Open</option>
             <option value="progress" ${ins.status==='progress'?'selected':''}>In Progress</option>
             <option value="done" ${ins.status==='done'?'selected':''}>Done</option>
@@ -2359,9 +2406,9 @@ function renderInstructions(){
         </div>
       </div>
       <div style="padding:12px 16px;">
-        <div style="font-size:13px;line-height:1.6;margin-bottom:8px;"><strong>Instruction:</strong> ${ins.desc}</div>
-        ${ins.action?`<div style="font-size:12px;background:var(--surface);padding:8px 10px;border-radius:6px;border-left:3px solid var(--accent2);"><strong>Response:</strong> ${ins.action}</div>`:''}
-        <div style="margin-top:10px;"><button class="btn btn-danger btn-sm" onclick="deleteInstr('${ins.id}')">✕ Delete</button></div>
+        <div style="font-size:13px;line-height:1.6;margin-bottom:8px;"><strong>Instruction:</strong> ${esc(ins.desc)}</div>
+        ${ins.action?`<div style="font-size:12px;background:var(--surface);padding:8px 10px;border-radius:6px;border-left:3px solid var(--accent2);"><strong>Response:</strong> ${esc(ins.action)}</div>`:''}
+        <div style="margin-top:10px;"><button class="btn btn-danger btn-sm" onclick="deleteInstr('${jsArg(ins.id)}')">✕ Delete</button></div>
       </div>
     </div>`).join('');
 }
@@ -2392,7 +2439,7 @@ function renderReport(){
   wrap.innerHTML=`<div class="report-wrap">
     <div class="rep-head">
       <div>
-        <div class="rep-co">${p.company||'Build<span>Track</span>'}</div>
+        <div class="rep-co">${p.company?esc(p.company):'Build<span>Track</span>'}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;">Contractor's Site Progress Report</div>
       </div>
       <div class="rep-meta">
@@ -2403,35 +2450,35 @@ function renderReport(){
     </div>
     <div class="rep-h3">CONTRACT DETAILS</div>
     <div class="rep-grid">
-      <div><strong>Project:</strong>${p.name||def.name+' – '+def.sub}</div>
-      <div><strong>Client:</strong>${p.client||def.defaultProject?.client||'—'}</div>
-      <div><strong>Consultant:</strong>${p.engineer||'—'}</div>
-      <div><strong>Foreman:</strong>${p.foreman||'—'}</div>
+      <div><strong>Project:</strong>${esc(p.name||def.name+' – '+def.sub)}</div>
+      <div><strong>Client:</strong>${esc(p.client||def.defaultProject?.client||'—')}</div>
+      <div><strong>Consultant:</strong>${esc(p.engineer||'—')}</div>
+      <div><strong>Foreman:</strong>${esc(p.foreman||'—')}</div>
       <div><strong>Contract Start:</strong>${fmtDate(p.start)}</div>
       <div><strong>Planned Completion:</strong>${fmtDate(p.end)}</div>
-      <div><strong>Contract Sum:</strong>${p.sum?'USHS '+p.sum:'—'}</div>
-      <div><strong>Location:</strong>${def.location}</div>
+      <div><strong>Contract Sum:</strong>${p.sum?'USHS '+esc(p.sum):'—'}</div>
+      <div><strong>Location:</strong>${esc(def.location)}</div>
     </div>
     ${w.length?`<div class="rep-h3">WORKS PROGRESS (${done} of ${w.length} completed)</div>
     ${w.map(item=>{const st=item.status||(item.pct===100?'done':item.pct===0?'notstarted':'inprogress');const col={done:'#22c55e',inprogress:'#f59e0b',notstarted:'#9ca3af',onhold:'#ef4444'}[st];return`<div class="prog-wrap">
-      <div class="prog-label"><span><strong>${item.name}</strong> <span style="font-size:10px;color:var(--muted);">(${item.cat})</span></span><div style="display:flex;align-items:center;gap:8px;"><span class="badge ${{done:'b-green',inprogress:'b-amber',notstarted:'b-gray',onhold:'b-red'}[st]}">${statusLabel(st)}</span><span>${item.pct}%</span></div></div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${item.pct}%;background:${col};"></div></div>
+      <div class="prog-label"><span><strong>${esc(item.name)}</strong> <span style="font-size:10px;color:var(--muted);">(${esc(item.cat)})</span></span><div style="display:flex;align-items:center;gap:8px;"><span class="badge ${escAttr({done:'b-green',inprogress:'b-amber',notstarted:'b-gray',onhold:'b-red'}[st]||'b-gray')}">${esc(statusLabel(st))}</span><span>${esc(item.pct)}%</span></div></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${escAttr(item.pct)}%;background:${escAttr(col)};"></div></div>
       ${item.enddate?`<div style="font-size:10px;color:#16a34a;">Completed: ${fmtDate(item.enddate)}</div>`:''}
-      ${item.completion?`<div style="font-size:10px;color:#16a34a;font-style:italic;">${item.completion}</div>`:''}
+      ${item.completion?`<div style="font-size:10px;color:#16a34a;font-style:italic;">${esc(item.completion)}</div>`:''}
     </div>`;}).join('')}`:''}
     ${state.instructions.filter(i=>i.status!=='done').length?`<div class="rep-h3">OUTSTANDING INSTRUCTIONS (${state.instructions.filter(i=>i.status!=='done').length})</div>
-    ${state.instructions.filter(i=>i.status!=='done').map(ins=>`<div style="padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:12px;"><div style="font-weight:700;">${ins.type} — ${fmtDate(ins.date)} · From: ${ins.from||'—'}</div><div>${ins.desc}</div>${ins.action?`<div style="color:var(--muted);font-style:italic;">Response: ${ins.action}</div>`:''}</div>`).join('')}`:''}
+    ${state.instructions.filter(i=>i.status!=='done').map(ins=>`<div style="padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:12px;"><div style="font-weight:700;">${esc(ins.type)} — ${fmtDate(ins.date)} · From: ${esc(ins.from||'—')}</div><div>${esc(ins.desc)}</div>${ins.action?`<div style="color:var(--muted);font-style:italic;">Response: ${esc(ins.action)}</div>`:''}</div>`).join('')}`:''}
     ${state.logs.length?`<div class="rep-h3">DAILY LOG RECORDS (${state.logs.length} entries)</div>
     ${state.logs.map((l,i)=>{const wkrs=l.labour?l.labour.reduce((s,r)=>s+(parseInt(r.count)||0),0):0;return`<div style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:12px;">
-      <div style="font-weight:700;margin-bottom:4px;">Entry ${state.logs.length-i}: ${fmtDate(l.date)} · ${l.weather} · ${l.supervisor||'—'} · ${wkrs} workers</div>
-      ${l.workdone?`<div><strong>Work Done:</strong> ${l.workdone}</div>`:''}
-      ${l.materials?`<div><strong>Materials:</strong> ${l.materials}</div>`:''}
-      ${l.problems?`<div style="color:var(--danger);"><strong>Problems:</strong> ${l.problems}</div>`:''}
-      ${l.instructions?`<div><strong>Instructions:</strong> ${l.instructions}</div>`:''}
-      ${l.tomorrow?`<div><strong>Tomorrow:</strong> ${l.tomorrow}</div>`:''}
+      <div style="font-weight:700;margin-bottom:4px;">Entry ${state.logs.length-i}: ${fmtDate(l.date)} · ${esc(l.weather)} · ${esc(l.supervisor||'—')} · ${wkrs} workers</div>
+      ${l.workdone?`<div><strong>Work Done:</strong> ${esc(l.workdone)}</div>`:''}
+      ${l.materials?`<div><strong>Materials:</strong> ${esc(l.materials)}</div>`:''}
+      ${l.problems?`<div style="color:var(--danger);"><strong>Problems:</strong> ${esc(l.problems)}</div>`:''}
+      ${l.instructions?`<div><strong>Instructions:</strong> ${esc(l.instructions)}</div>`:''}
+      ${l.tomorrow?`<div><strong>Tomorrow:</strong> ${esc(l.tomorrow)}</div>`:''}
     </div>`;}).join('')}`:''}
     <div style="margin-top:28px;padding-top:14px;border-top:2px solid var(--border);display:flex;justify-content:space-between;font-size:11px;color:var(--muted);">
-      <span>Prepared by: ${p.foreman||'_____________________'}</span>
+      <span>Prepared by: ${esc(p.foreman||'_____________________')}</span>
       <span>Signature: _____________________</span>
       <span>Date: ${today}</span>
     </div>
@@ -2447,10 +2494,21 @@ function renderReport(){
   if (saved) {
     try {
       currentUser = JSON.parse(saved);
-      document.getElementById('login-screen').style.display = 'none';
+      if (!currentUser?.uid || !currentUser?.idToken) throw new Error('Invalid saved session');
+      const profile = await fsGet('users', currentUser.uid);
+      if (!profile || profile.status === 'disabled') throw new Error('Session profile unavailable');
+      currentUser = {
+        ...currentUser,
+        name: profile.name || currentUser.email,
+        role: profile.role || 'client',
+        site: profile.site || 'all'
+      };
+      localStorage.setItem('bt_user', JSON.stringify(currentUser));
       startApp();
     } catch(e) {
       localStorage.removeItem('bt_user');
+      currentUser = null;
+      document.getElementById('login-screen').style.display = 'flex';
     }
   }
   // Allow Enter key to submit login
