@@ -187,6 +187,8 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 /* LABOUR ROWS */
 .labour-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr auto;gap:7px;align-items:center;background:var(--surface);padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;}
 .labour-row input,.labour-row select{padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:'Nunito Sans',sans-serif;background:white;}
+.equipment-row{display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr auto;gap:7px;align-items:center;background:var(--surface);padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;}
+.equipment-row input,.equipment-row select{padding:6px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:'Nunito Sans',sans-serif;background:white;}
 
 /* MODAL — bottom sheet on mobile */
 .overlay{display:none;position:fixed;inset:0;background:rgba(15,22,35,.65);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:200;align-items:flex-end;justify-content:center;padding:0;}
@@ -443,6 +445,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
   <div class="nav-tab" onclick="goPage('daily',this)">🗓 Daily Log</div>
   <div class="nav-tab" onclick="goPage('expenses',this)">💰 Expenses</div>
   <div class="nav-tab" onclick="goPage('materials',this)">📦 Materials</div>
+  <div class="nav-tab" onclick="goPage('equipment',this)">🛠 Equipment</div>
   <div class="nav-tab" onclick="goPage('labour',this)">👷 Labour</div>
   <div class="nav-tab" onclick="goPage('instructions',this)">📌 Instructions</div>
   <div class="nav-tab" onclick="goPage('report',this)">📄 Report</div>
@@ -540,6 +543,15 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
       <button class="btn btn-blue btn-sm" id="btn-new-material" onclick="openAddMaterial()">+ Add Item</button>
     </div>
     <div id="material-list"></div>
+  </div>
+
+  <!-- EQUIPMENT -->
+  <div class="page" id="page-equipment">
+    <div class="sec-hd">
+      <h2>Equipment &amp; Tools Register</h2>
+      <button class="btn btn-blue btn-sm" id="btn-new-equipment" onclick="openAddEquipment()">+ Add Equipment</button>
+    </div>
+    <div id="equipment-list"></div>
   </div>
 
   <!-- PROJECTS -->
@@ -732,7 +744,19 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
       <div class="fg"><label>🔴 Problems / Challenges</label><textarea id="l-problems" placeholder="Blockages, shortages, equipment failures..." style="min-height:55px;"></textarea></div>
       <div class="fg"><label>📌 Instructions Received</label><textarea id="l-instructions" placeholder="Verbal or written instructions received today..." style="min-height:55px;"></textarea></div>
       <div class="fg"><label>🏗 Plant & Equipment on Site</label><textarea id="l-plant" placeholder="e.g. concrete mixer, vibrator, compactor..." style="min-height:50px;"></textarea></div>
-      <div class="fg"><label>📅 Plan for Tomorrow</label><textarea id="l-tomorrow" placeholder="Work planned for next day..." style="min-height:50px;"></textarea></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Equipment Used Today</div>
+        <button class="btn btn-ghost btn-sm" onclick="addEquipmentUseRow()">+ Row</button>
+      </div>
+      <div id="log-equipment-hd" style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr auto;gap:8px;padding:0 10px;margin-bottom:4px;">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Equipment / Tool</span>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Hours</span>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Operator</span>
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);">Issue / Fuel</span>
+        <span></span>
+      </div>
+      <div id="log-equipment-rows"></div>
+      <div class="fg"><label>📅 Plan for Tomorrow <button type="button" class="btn btn-ghost btn-sm" onclick="fillSuggestedTomorrow()" style="margin-left:8px;padding:3px 8px;">Suggest</button></label><textarea id="l-tomorrow" placeholder="Work planned for next day..." style="min-height:50px;"></textarea></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
         <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Labour Attendance</div>
         <button class="btn btn-ghost btn-sm" onclick="addLabourRow()">+ Row</button>
@@ -820,6 +844,46 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="closeModal('modal-material')">Cancel</button>
       <button class="btn btn-amber" id="mat-save-btn" onclick="saveMaterial()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Equipment ══ -->
+<div class="overlay" id="modal-equipment">
+  <div class="modal" style="width:540px;">
+    <div class="modal-hd"><h3 id="eq-modal-title">Add Equipment / Tool</h3><button class="modal-close" onclick="closeModal('modal-equipment')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Equipment / Tool Name</label><input type="text" id="eq-name" placeholder="e.g. Plate compactor, concrete mixer, generator"></div>
+      <div class="fg2">
+        <div class="fg"><label>Category</label>
+          <select id="eq-category">
+            <option>Machine / Plant</option><option>Power Tool</option><option>Hand Tool</option>
+            <option>Vehicle</option><option>Scaffold / Access</option><option>Safety Equipment</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Status</label>
+          <select id="eq-status">
+            <option value="available">Available</option>
+            <option value="inuse">In Use</option>
+            <option value="repair">Under Repair</option>
+            <option value="broken">Broken</option>
+            <option value="offsite">Off-site</option>
+          </select>
+        </div>
+        <div class="fg"><label>Condition</label>
+          <select id="eq-condition">
+            <option>Good</option><option>Fair</option><option>Needs Service</option><option>Unsafe / Do Not Use</option>
+          </select>
+        </div>
+        <div class="fg"><label>Assigned To</label><input type="text" id="eq-assigned" placeholder="Supervisor / operator"></div>
+        <div class="fg"><label>Last Inspection / Service</label><input type="date" id="eq-lastservice"></div>
+        <div class="fg"><label>Asset / Serial No.</label><input type="text" id="eq-asset" placeholder="Optional"></div>
+      </div>
+      <div class="fg"><label>Notes</label><textarea id="eq-notes" placeholder="Fuel notes, service history, defects, attachments..." style="min-height:60px;"></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-equipment')">Cancel</button>
+      <button class="btn btn-amber" id="eq-save-btn" onclick="saveEquipment()">Add Equipment</button>
     </div>
   </div>
 </div>
@@ -1282,7 +1346,7 @@ function startApp() {
   if (currentUser.role==='superior'||currentUser.role==='engineer') document.getElementById('btn-word-report').style.display='';
   // Hide add buttons for client
   if (currentUser.role==='client') {
-    ['btn-new-log','btn-new-expense','btn-new-material','btn-add-activity','btn-add-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    ['btn-new-log','btn-new-expense','btn-new-material','btn-new-equipment','btn-add-activity','btn-add-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   }
   // Load correct site
   if (currentUser.site!=='all') activeSite = currentUser.site;
@@ -1530,6 +1594,101 @@ function renderMaterials() {
 }
 
 // ════════════════════════════════════════
+// EQUIPMENT & TOOLS
+// ════════════════════════════════════════
+let editEquipmentId = null;
+
+function equipmentStatusLabel(s){return{available:'Available',inuse:'In Use',repair:'Under Repair',broken:'Broken',offsite:'Off-site'}[s]||s;}
+function equipmentBadge(s){return{available:'b-green',inuse:'b-blue',repair:'b-amber',broken:'b-red',offsite:'b-gray'}[s]||'b-gray';}
+
+function openAddEquipment(){
+  editEquipmentId=null;
+  document.getElementById('eq-modal-title').textContent='Add Equipment / Tool';
+  document.getElementById('eq-save-btn').textContent='Add Equipment';
+  ['eq-name','eq-assigned','eq-lastservice','eq-asset','eq-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('eq-category').selectedIndex=0;
+  document.getElementById('eq-status').value='available';
+  document.getElementById('eq-condition').selectedIndex=0;
+  openModal('modal-equipment');
+}
+
+function openEditEquipment(id){
+  const e=state.equipment.find(x=>x.id===id); if(!e)return;
+  editEquipmentId=id;
+  document.getElementById('eq-modal-title').textContent='Edit Equipment / Tool';
+  document.getElementById('eq-save-btn').textContent='Save Changes';
+  document.getElementById('eq-name').value=e.name||'';
+  document.getElementById('eq-category').value=e.category||'Machine / Plant';
+  document.getElementById('eq-status').value=e.status||'available';
+  document.getElementById('eq-condition').value=e.condition||'Good';
+  document.getElementById('eq-assigned').value=e.assigned||'';
+  document.getElementById('eq-lastservice').value=e.lastService||'';
+  document.getElementById('eq-asset').value=e.asset||'';
+  document.getElementById('eq-notes').value=e.notes||'';
+  openModal('modal-equipment');
+}
+
+async function saveEquipment(){
+  const eq={
+    id:editEquipmentId||'eq_'+Date.now(),
+    name:document.getElementById('eq-name').value.trim(),
+    category:document.getElementById('eq-category').value,
+    status:document.getElementById('eq-status').value,
+    condition:document.getElementById('eq-condition').value,
+    assigned:document.getElementById('eq-assigned').value,
+    lastService:document.getElementById('eq-lastservice').value,
+    asset:document.getElementById('eq-asset').value,
+    notes:document.getElementById('eq-notes').value,
+    updatedBy:currentUser?.name||'',
+    updatedAt:new Date().toISOString()
+  };
+  if(!eq.name){alert('Enter equipment or tool name.');return;}
+  if(editEquipmentId){const i=state.equipment.findIndex(x=>x.id===editEquipmentId); if(i>-1)state.equipment[i]=eq;}
+  else state.equipment.unshift(eq);
+  await saveSite(); closeModal('modal-equipment'); renderEquipment();
+}
+
+async function updateEquipmentStatus(id,val){
+  const eq=state.equipment.find(x=>x.id===id); if(!eq)return;
+  eq.status=val; eq.updatedBy=currentUser?.name||''; eq.updatedAt=new Date().toISOString();
+  await saveSite(); renderEquipment();
+}
+
+async function deleteEquipment(id){
+  if(!confirm('Remove this equipment/tool?'))return;
+  state.equipment=state.equipment.filter(x=>x.id!==id);
+  await saveSite(); renderEquipment();
+}
+
+function renderEquipment(){
+  const wrap=document.getElementById('equipment-list'); if(!wrap)return;
+  const counts={available:0,inuse:0,repair:0,broken:0,offsite:0};
+  (state.equipment||[]).forEach(e=>{counts[e.status]=(counts[e.status]||0)+1;});
+  if(!state.equipment.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">🛠</div><p>No equipment or tools registered yet.</p></div>`;return;}
+  wrap.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    ${Object.keys(counts).map(s=>`<span class="badge ${equipmentBadge(s)}" style="padding:5px 12px;font-size:11px;">${equipmentStatusLabel(s)}: ${counts[s]}</span>`).join('')}
+  </div>
+  <div class="table-wrap"><table class="t">
+    <thead><tr><th>Equipment / Tool</th><th>Category</th><th>Condition</th><th>Assigned To</th><th>Last Service</th><th>Status</th><th></th></tr></thead>
+    <tbody>${state.equipment.map(eq=>`<tr>
+      <td><strong>${esc(eq.name)}</strong>${eq.asset?`<div style="font-size:10px;color:var(--muted);">Asset: ${esc(eq.asset)}</div>`:''}${eq.notes?`<div style="font-size:10px;color:var(--muted);">${esc(eq.notes.slice(0,70))}${eq.notes.length>70?'…':''}</div>`:''}</td>
+      <td><span class="badge b-blue">${esc(eq.category)}</span></td>
+      <td>${esc(eq.condition||'—')}</td>
+      <td>${esc(eq.assigned||'—')}</td>
+      <td>${fmtDate(eq.lastService)}</td>
+      <td>${canEdit()?`<select onchange="updateEquipmentStatus('${jsArg(eq.id)}',this.value)" style="font-size:11px;padding:4px 8px;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;">
+        <option value="available"${eq.status==='available'?' selected':''}>Available</option>
+        <option value="inuse"${eq.status==='inuse'?' selected':''}>In Use</option>
+        <option value="repair"${eq.status==='repair'?' selected':''}>Under Repair</option>
+        <option value="broken"${eq.status==='broken'?' selected':''}>Broken</option>
+        <option value="offsite"${eq.status==='offsite'?' selected':''}>Off-site</option>
+      </select>`:`<span class="badge ${equipmentBadge(eq.status)}">${equipmentStatusLabel(eq.status)}</span>`}</td>
+      <td>${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="openEditEquipment('${jsArg(eq.id)}')">✎</button> <button class="btn btn-danger btn-sm" onclick="deleteEquipment('${jsArg(eq.id)}')">✕</button>`:''}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ════════════════════════════════════════
 // USER MANAGEMENT (Superior only)
 // ════════════════════════════════════════
 async function fsList(col) {
@@ -1668,6 +1827,16 @@ async function generateWordReport() {
       children.push(new Paragraph({children:[],spacing:{after:200}}));
     }
 
+    // Equipment
+    if(state.equipment&&state.equipment.length){
+      children.push(hdr('EQUIPMENT & TOOLS REGISTER'));
+      children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[2600,1500,1500,1400,1200,800],rows:[
+        new TableRow({children:[cell('Equipment / Tool',true),cell('Category',true),cell('Condition',true),cell('Assigned To',true),cell('Status',true),cell('Service',true)]}),
+        ...state.equipment.map(e=>new TableRow({children:[cell(e.name),cell(e.category),cell(e.condition),cell(e.assigned||'—'),cell(equipmentStatusLabel(e.status)),cell(fmtDate(e.lastService))]}))
+      ]}));
+      children.push(new Paragraph({children:[],spacing:{after:200}}));
+    }
+
     // Daily logs
     if(state.logs.length){
       children.push(hdr('DAILY LOG RECORDS ('+state.logs.length+' entries)'));
@@ -1676,6 +1845,7 @@ async function generateWordReport() {
         children.push(par(`Entry ${state.logs.length-i}: ${fmtDate(l.date)} · ${l.weather} · ${l.supervisor||'—'} · ${wkrs} workers`,true));
         if(l.workdone) children.push(par('Work Done: '+l.workdone));
         if(l.materials) children.push(par('Materials: '+l.materials));
+        if(l.equipmentUsed&&l.equipmentUsed.length) children.push(par('Equipment Used: '+l.equipmentUsed.map(e=>`${e.name}${e.hours?' '+e.hours+'h':''}${e.operator?' by '+e.operator:''}${e.notes?' ('+e.notes+')':''}`).join('; ')));
         if(l.problems) children.push(par('Problems: '+l.problems,false,'C00000'));
         if(l.instructions) children.push(par('Instructions: '+l.instructions));
         if(l.tomorrow) children.push(par('Plan for Tomorrow: '+l.tomorrow));
@@ -1702,14 +1872,14 @@ let activeSite = localStorage.getItem('bt_active') || 'ndeeba';
 let activeFilter = 'all';
 let editActId = null;
 let editLogId = null;
-let state = { project: null, works: [], logs: [], labour: [], instructions: [], expenses: [], materials: [] };
+let state = { project: null, works: [], logs: [], labour: [], instructions: [], expenses: [], materials: [], equipment: [] };
 
 // ── Default / localStorage fallback for a site ──
 function defaultSiteData(k) {
   const raw = localStorage.getItem('bt_' + k);
-  if (raw) { try { const d=JSON.parse(raw); d.expenses=d.expenses||[]; d.materials=d.materials||[]; return d; } catch(e) {} }
+  if (raw) { try { const d=JSON.parse(raw); d.expenses=d.expenses||[]; d.materials=d.materials||[]; d.equipment=d.equipment||[]; return d; } catch(e) {} }
   const d = SITE_DEFS[k];
-  return { project: { ...d.defaultProject }, works: d.defaultWorks.map(w => ({ ...w })), logs: [], labour: [], instructions: [], expenses: [], materials: [] };
+  return { project: { ...d.defaultProject }, works: d.defaultWorks.map(w => ({ ...w })), logs: [], labour: [], instructions: [], expenses: [], materials: [], equipment: [] };
 }
 
 // ── Save active site to Firestore + localStorage ──
@@ -1723,6 +1893,7 @@ async function saveSite() {
     instructions: state.instructions || [],
     expenses:     state.expenses     || [],
     materials:    state.materials    || [],
+    equipment:    state.equipment    || [],
     updatedAt:    new Date().toISOString()
   };
   localStorage.setItem('bt_' + activeSite, JSON.stringify(data));
@@ -1749,13 +1920,14 @@ async function loadSite(k) {
       state.instructions = data.instructions || [];
       state.expenses     = data.expenses     || [];
       state.materials    = data.materials    || [];
+      state.equipment    = data.equipment    || [];
       localStorage.setItem('bt_' + k, JSON.stringify(data));
     } else {
       const def = defaultSiteData(k);
       state.project = def.project; state.works = def.works;
       state.logs = def.logs; state.labour = def.labour;
       state.instructions = def.instructions;
-      state.expenses = []; state.materials = [];
+      state.expenses = []; state.materials = []; state.equipment = [];
       await saveSite();
     }
     setSyncStatus('live');
@@ -1765,7 +1937,7 @@ async function loadSite(k) {
     state.project = def.project; state.works = def.works;
     state.logs = def.logs; state.labour = def.labour;
     state.instructions = def.instructions;
-    state.expenses = def.expenses||[]; state.materials = def.materials||[];
+    state.expenses = def.expenses||[]; state.materials = def.materials||[]; state.equipment = def.equipment||[];
     setSyncStatus('error');
   }
 }
@@ -1808,6 +1980,7 @@ function goPage(page, el){
   if(page==='daily') renderDaily();
   if(page==='expenses') renderExpenses();
   if(page==='materials') renderMaterials();
+  if(page==='equipment') renderEquipment();
   if(page==='labour') renderLabour();
   if(page==='instructions') renderInstructions();
   if(page==='report') renderReport();
@@ -2240,6 +2413,42 @@ function getLabourRows(){
     return{trade:f[0].value,name:f[1].value,count:f[2].value,hours:f[3].value};
   });
 }
+function equipmentOptionHtml(selected=''){
+  const opts=(state.equipment||[]).map(e=>`<option value="${escAttr(e.name)}"${e.name===selected?' selected':''}>${esc(e.name)}</option>`).join('');
+  return opts || '<option value="">No equipment registered</option>';
+}
+function addEquipmentUseRow(row={}){
+  const wrap=document.getElementById('log-equipment-rows');
+  const id='er-'+Date.now()+'-'+Math.floor(Math.random()*1000);
+  const d=document.createElement('div');
+  d.className='equipment-row'; d.id=id;
+  d.innerHTML=`<select>${equipmentOptionHtml(row.name||'')}</select>
+  <input type="number" min="0" step="0.5" value="${escAttr(row.hours||'')}" placeholder="Hrs">
+  <input type="text" value="${escAttr(row.operator||'')}" placeholder="Operator">
+  <input type="text" value="${escAttr(row.notes||'')}" placeholder="Issue / fuel">
+  <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()">✕</button>`;
+  wrap.appendChild(d);
+}
+function getEquipmentUseRows(){
+  return Array.from(document.querySelectorAll('#log-equipment-rows .equipment-row')).map(r=>{
+    const f=r.querySelectorAll('select,input');
+    return{name:f[0].value,hours:f[1].value,operator:f[2].value,notes:f[3].value};
+  }).filter(r=>r.name||r.hours||r.operator||r.notes);
+}
+function fillSuggestedTomorrow(){
+  document.getElementById('l-tomorrow').value=suggestTomorrowTasks();
+}
+function suggestTomorrowTasks(){
+  const ongoing=(state.works||[]).filter(w=>w.status==='inprogress'||(w.pct>0&&w.pct<100&&w.status!=='done')).sort((a,b)=>(b.pct||0)-(a.pct||0));
+  const pending=(state.works||[]).filter(w=>(!w.status||w.status==='notstarted')&&(!w.pct||w.pct===0));
+  const lines=[];
+  ongoing.slice(0,4).forEach(w=>lines.push(`Continue ${w.name} (${w.pct||0}% complete) and push toward completion.`));
+  pending.slice(0,2).forEach(w=>lines.push(`Prepare to start ${w.name}${w.notes?' - '+w.notes.slice(0,70):''}.`));
+  const issues=document.getElementById('l-problems')?.value.trim();
+  if(issues) lines.push('Resolve today’s issue before work starts: '+issues.slice(0,120));
+  if(!lines.length) lines.push('Review site sequence with supervisor and proceed with the next approved activity.');
+  return lines.join('\n');
+}
 function openNewLog(){
   editLogId=null;
   pendingPhotos=[];
@@ -2250,7 +2459,10 @@ function openNewLog(){
   document.getElementById('l-status').selectedIndex=0;
   ['l-workdone','l-materials','l-problems','l-instructions','l-plant','l-tomorrow'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('log-labour-rows').innerHTML='';
+  document.getElementById('log-equipment-rows').innerHTML='';
   addLabourRow();
+  if((state.equipment||[]).length)addEquipmentUseRow();
+  fillSuggestedTomorrow();
   renderPhotoGrid();
   openModal('modal-log');
 }
@@ -2268,6 +2480,7 @@ async function saveLog(){
     plant:document.getElementById('l-plant').value,
     tomorrow:document.getElementById('l-tomorrow').value,
     labour:getLabourRows(),
+    equipmentUsed:getEquipmentUseRows(),
     photos:[...pendingPhotos],
     submittedBy:currentUser?.name||''
   };
@@ -2300,6 +2513,9 @@ function editLog(id){
   const wrap=document.getElementById('log-labour-rows');wrap.innerHTML='';
   (l.labour||[]).forEach(r=>{addLabourRow();const rows=wrap.querySelectorAll('.labour-row');const last=rows[rows.length-1];const f=last.querySelectorAll('select,input');f[0].value=r.trade;f[1].value=r.name;f[2].value=r.count;f[3].value=r.hours;});
   if(!l.labour||!l.labour.length)addLabourRow();
+  const ewrap=document.getElementById('log-equipment-rows');ewrap.innerHTML='';
+  (l.equipmentUsed||[]).forEach(r=>addEquipmentUseRow(r));
+  if(!l.equipmentUsed||!l.equipmentUsed.length) addEquipmentUseRow();
   renderPhotoGrid();
   openModal('modal-log');
 }
@@ -2327,6 +2543,7 @@ function renderDaily(){
         ${l.workdone?`<div class="log-field"><div class="log-field-label green">✅ Work Done Today</div><div class="log-text">${esc(l.workdone)}</div></div>`:''}
         ${l.materials?`<div class="log-field"><div class="log-field-label blue">📦 Materials</div><div class="log-text">${esc(l.materials)}</div></div>`:''}
         ${l.plant?`<div class="log-field"><div class="log-field-label">🏗 Plant & Equipment</div><div class="log-text">${esc(l.plant)}</div></div>`:''}
+        ${l.equipmentUsed&&l.equipmentUsed.length?`<div class="log-field"><div class="log-field-label">🛠 Equipment Used</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.equipmentUsed.map(r=>`<span class="badge b-blue">${esc(r.name)}${r.hours?' · '+esc(r.hours)+'h':''}${r.operator?' · '+esc(r.operator):''}${r.notes?' · '+esc(r.notes):''}</span>`).join('')}</div></div>`:''}
         ${l.problems?`<div class="log-field"><div class="log-field-label red">🔴 Problems</div><div class="log-text" style="color:#dc2626;">${esc(l.problems)}</div></div>`:''}
         ${l.instructions?`<div class="log-field"><div class="log-field-label amber">📌 Instructions Received</div><div class="log-text">${esc(l.instructions)}</div></div>`:''}
         ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue">📅 Tomorrow</div><div class="log-text">${esc(l.tomorrow)}</div></div>`:''}
@@ -2466,6 +2683,11 @@ function renderReport(){
       ${item.enddate?`<div style="font-size:10px;color:#16a34a;">Completed: ${fmtDate(item.enddate)}</div>`:''}
       ${item.completion?`<div style="font-size:10px;color:#16a34a;font-style:italic;">${esc(item.completion)}</div>`:''}
     </div>`;}).join('')}`:''}
+    ${state.equipment&&state.equipment.length?`<div class="rep-h3">EQUIPMENT & TOOLS (${state.equipment.length})</div>
+    <div class="table-wrap" style="box-shadow:none;margin-bottom:12px;"><table class="t">
+      <thead><tr><th>Equipment</th><th>Condition</th><th>Assigned To</th><th>Status</th></tr></thead>
+      <tbody>${state.equipment.map(e=>`<tr><td>${esc(e.name)}</td><td>${esc(e.condition||'—')}</td><td>${esc(e.assigned||'—')}</td><td><span class="badge ${equipmentBadge(e.status)}">${esc(equipmentStatusLabel(e.status))}</span></td></tr>`).join('')}</tbody>
+    </table></div>`:''}
     ${state.instructions.filter(i=>i.status!=='done').length?`<div class="rep-h3">OUTSTANDING INSTRUCTIONS (${state.instructions.filter(i=>i.status!=='done').length})</div>
     ${state.instructions.filter(i=>i.status!=='done').map(ins=>`<div style="padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:12px;"><div style="font-weight:700;">${esc(ins.type)} — ${fmtDate(ins.date)} · From: ${esc(ins.from||'—')}</div><div>${esc(ins.desc)}</div>${ins.action?`<div style="color:var(--muted);font-style:italic;">Response: ${esc(ins.action)}</div>`:''}</div>`).join('')}`:''}
     ${state.logs.length?`<div class="rep-h3">DAILY LOG RECORDS (${state.logs.length} entries)</div>
@@ -2473,6 +2695,7 @@ function renderReport(){
       <div style="font-weight:700;margin-bottom:4px;">Entry ${state.logs.length-i}: ${fmtDate(l.date)} · ${esc(l.weather)} · ${esc(l.supervisor||'—')} · ${wkrs} workers</div>
       ${l.workdone?`<div><strong>Work Done:</strong> ${esc(l.workdone)}</div>`:''}
       ${l.materials?`<div><strong>Materials:</strong> ${esc(l.materials)}</div>`:''}
+      ${l.equipmentUsed&&l.equipmentUsed.length?`<div><strong>Equipment Used:</strong> ${l.equipmentUsed.map(e=>`${esc(e.name)}${e.hours?' '+esc(e.hours)+'h':''}${e.operator?' by '+esc(e.operator):''}${e.notes?' ('+esc(e.notes)+')':''}`).join('; ')}</div>`:''}
       ${l.problems?`<div style="color:var(--danger);"><strong>Problems:</strong> ${esc(l.problems)}</div>`:''}
       ${l.instructions?`<div><strong>Instructions:</strong> ${esc(l.instructions)}</div>`:''}
       ${l.tomorrow?`<div><strong>Tomorrow:</strong> ${esc(l.tomorrow)}</div>`:''}
