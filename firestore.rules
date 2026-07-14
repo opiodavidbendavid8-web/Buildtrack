@@ -1,29 +1,37 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
+
     function userPath(uid) {
       return /databases/$(database)/documents/users/$(uid);
     }
+
     function profile() {
       return get(userPath(request.auth.uid)).data;
     }
+
     function role() {
       return profile().role;
     }
+
     function isActive() {
       return signedIn()
         && exists(userPath(request.auth.uid))
         && profile().status != 'disabled';
     }
+
     function isSuperior() {
       return isActive() && role() == 'superior';
     }
+
     function isEngineerOrSuperior() {
       return isActive() && role() in ['engineer', 'superior'];
     }
+
     function canUseSite(siteId) {
       return isActive()
         && (
@@ -32,6 +40,7 @@ service cloud.firestore {
           || profile().site == siteId
         );
     }
+
     function canWriteSite(siteId) {
       return isActive()
         && (
@@ -39,9 +48,11 @@ service cloud.firestore {
           || (role() == 'foreman' && (profile().site == siteId || profile().site == 'all'))
         );
     }
+
     match /users/{uid} {
       allow get: if isActive() && (request.auth.uid == uid || isSuperior());
       allow list: if isSuperior();
+
       allow create: if signedIn()
         && (
           (
@@ -52,13 +63,16 @@ service cloud.firestore {
           )
           || isSuperior()
         );
+
       allow update, delete: if isSuperior();
     }
+
     match /sites/{siteId} {
       allow get, list: if canUseSite(siteId);
       allow create, update: if canWriteSite(siteId);
       allow delete: if isSuperior();
     }
+
     match /projects/{projectId} {
       allow get, list: if isActive();
       allow create, update: if isActive() && role() in ['foreman', 'engineer', 'superior'];
