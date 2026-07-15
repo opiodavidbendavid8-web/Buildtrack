@@ -9,23 +9,23 @@
 :root{--bg:#f0f2f6;--ink:#0f1623;--ink2:#1e2a3a;--card:#ffffff;--border:#e2e8f0;--border2:#cbd5e1;--muted:#64748b;--surface:#f8fafc;--accent:#f59e0b;--accent-d:#d97706;--accent2:#0ea5e9;--accent2-d:#0284c7;--success:#22c55e;--danger:#ef4444;--warn:#f97316;--purple:#8b5cf6;--radius:10px;--radius-lg:14px;--shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);--shadow:0 4px 16px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);--shadow-lg:0 12px 40px rgba(0,0,0,.16),0 4px 8px rgba(0,0,0,.08);--header-h:56px;--station-h:44px;--nav-h:40px;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;}
-body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
 
 /* LOGIN */
 .login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0f1623 0%,#1a2744 50%,#0f1623 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
 .login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(245,158,11,.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(14,165,233,.10) 0%,transparent 60%);pointer-events:none;}
-.login-box{background:white;border-radius:20px;padding:40px 36px;width:400px;max-width:100%;box-shadow:var(--shadow-lg);position:relative;z-index:1;animation:loginPop .3s cubic-bezier(.34,1.56,.64,1);}
+.login-box{background:white;border-radius:20px;padding:36px;width:420px;max-width:100%;max-height:calc(100dvh - 32px);overflow-y:auto;box-shadow:var(--shadow-lg);position:relative;z-index:1;animation:loginPop .3s cubic-bezier(.34,1.56,.64,1);}
 @keyframes loginPop{from{transform:scale(.92) translateY(20px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
 .login-logo{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--accent);text-align:center;margin-bottom:4px;letter-spacing:-1px;}
 .login-logo span{color:var(--ink);}
-.login-sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:28px;letter-spacing:.3px;}
+.login-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px;letter-spacing:.2px;}
 .login-err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:14px;display:none;border-left:3px solid var(--danger);}
 .auth-tabs{display:flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px;}
-.auth-tab-btn{flex:1;padding:10px;border:none;background:white;font-family:'Nunito Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--muted);}
+.auth-tab-btn{flex:1;min-height:44px;padding:10px;border:none;background:white;font-family:'Nunito Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--muted);}
 .auth-tab-btn.active{background:var(--accent);color:#1a1a1a;}
 .auth-tab-btn:not(.active):hover{background:var(--surface);}
 .role-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
-.role-card{border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .15s;background:white;-webkit-tap-highlight-color:transparent;}
+.role-card{border:2px solid var(--border);border-radius:10px;padding:11px 12px;min-height:56px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .15s;background:white;-webkit-tap-highlight-color:transparent;}
 .role-card:hover{border-color:var(--border2);background:var(--surface);}
 .role-card.selected-foreman{border-color:var(--accent);background:#fffbeb;}
 .role-card.selected-engineer{border-color:var(--accent2);background:#eff6ff;}
@@ -34,6 +34,8 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .role-card-icon{font-size:22px;flex-shrink:0;}
 .role-card-label{font-weight:700;font-size:13px;}
 .role-card-desc{font-size:10px;color:var(--muted);}
+.role-card input[type="radio"]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.role-card:focus-within{outline:3px solid rgba(14,165,233,.28);outline-offset:2px;}
 .role-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
 .role-foreman{background:#fef3c7;color:#92400e;}
 .role-engineer{background:#dbeafe;color:#1d4ed8;}
@@ -57,7 +59,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 /* STATION TABS */
 .station-tabs{background:var(--ink2);height:var(--station-h);flex-shrink:0;display:flex;align-items:stretch;padding:0 16px;gap:2px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,.06);-webkit-overflow-scrolling:touch;}
 .station-tabs::-webkit-scrollbar{display:none;}
-.station-tab{display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;color:#64748b;font-weight:700;font-size:12px;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.station-tab{display:flex;align-items:center;gap:7px;padding:0 14px;cursor:pointer;border:0;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;color:#94a3b8;font-family:inherit;background:transparent;font-weight:700;font-size:12px;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
 .station-tab:hover{color:#94a3b8;background:rgba(255,255,255,.04);}
 .station-tab.active{color:white;}
 .station-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:transform .15s;}
@@ -68,7 +70,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 /* NAV TABS */
 .nav-tabs{background:var(--card);height:var(--nav-h);flex-shrink:0;display:flex;align-items:stretch;padding:0 16px;gap:0;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid var(--border);box-shadow:var(--shadow-sm);-webkit-overflow-scrolling:touch;}
 .nav-tabs::-webkit-scrollbar{display:none;}
-.nav-tab{display:flex;align-items:center;padding:0 14px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.nav-tab{display:flex;align-items:center;padding:0 14px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border:0;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;-webkit-tap-highlight-color:transparent;flex-shrink:0;background:transparent;font-family:inherit;}
 .nav-tab:hover{color:var(--ink);background:var(--surface);}
 .nav-tab.active{color:var(--accent2);border-bottom-color:var(--accent2);}
 
@@ -83,11 +85,11 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 
 /* STATS */
 .stats-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
-.stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:3px solid transparent;cursor:pointer;transition:all .18s;box-shadow:var(--shadow-sm);}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;border-top:3px solid transparent;cursor:pointer;transition:all .18s;box-shadow:var(--shadow-sm);text-align:left;font-family:inherit;color:inherit;}
 .stat-box:hover{box-shadow:var(--shadow);transform:translateY(-2px);}
-.stat-label{font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.stat-label{font-size:10px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
 .stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;}
-.stat-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:4px;}
 
 /* PROGRESS BAR */
 .overall-bar-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:16px;box-shadow:var(--shadow-sm);}
@@ -101,7 +103,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .sec-hd h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--ink);}
 
 /* BUTTONS */
-.btn{padding:8px 18px;border:none;border-radius:8px;font-family:'Nunito Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow-sm);}
+.btn{padding:9px 18px;min-height:40px;border:none;border-radius:8px;font-family:'Nunito Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow-sm);}
 .btn:active{transform:scale(.97);}
 .btn-amber{background:var(--accent);color:#1a1a1a;}
 .btn-amber:hover{background:var(--accent-d);}
@@ -113,7 +115,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .btn-ghost:hover{background:var(--surface);border-color:var(--border2);}
 .btn-danger{background:var(--danger);color:white;}
 .btn-danger:hover{background:#dc2626;}
-.btn-sm{padding:5px 12px;font-size:11px;border-radius:6px;}
+.btn-sm{padding:7px 12px;min-height:36px;font-size:12px;border-radius:7px;}
 .btn-full{width:100%;justify-content:center;}
 
 /* ACTIVITY */
@@ -124,9 +126,9 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .activity-item.status-onhold{border-left-color:var(--danger);background:linear-gradient(to right,#fff7f7,white 40%);}
 .activity-item.status-notstarted{border-left-color:var(--border2);}
 .act-name{font-weight:700;font-size:13px;margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.act-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px;}
+.act-meta{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:2px;}
 .act-cat{background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
-.act-notes{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.act-notes{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .act-completion{font-size:11px;color:#16a34a;margin-top:3px;font-weight:600;}
 .status-select{padding:7px 28px 7px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:white;transition:border-color .12s,background .12s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2364748b' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;min-width:115px;}
 .status-select:focus{outline:none;box-shadow:0 0 0 3px rgba(14,165,233,.15);}
@@ -154,8 +156,8 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 
 /* FORMS */
 .fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
-.fg label{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
-.fg input,.fg select,.fg textarea{padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito Sans',sans-serif;font-size:13px;background:white;color:var(--ink);transition:border-color .15s,box-shadow .15s;width:100%;}
+.fg label{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);}
+.fg input,.fg select,.fg textarea{padding:10px 13px;min-height:44px;border:1.5px solid var(--border);border-radius:8px;font-family:'Nunito Sans',sans-serif;font-size:14px;background:white;color:var(--ink);transition:border-color .15s,box-shadow .15s;width:100%;}
 .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(14,165,233,.12);}
 .fg textarea{resize:vertical;min-height:70px;line-height:1.55;}
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
@@ -234,6 +236,8 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 /* POLISH LAYER */
 body{background:linear-gradient(180deg,#edf2f7 0%,#f7f9fc 38%,#eef2f7 100%);}
 button,input,select,textarea{font:inherit;}
+#form-signin input,#form-signup input,#form-signup select{min-height:44px;width:100%;}
+#form-signin input:focus,#form-signup input:focus,#form-signup select:focus{outline:none;border-color:var(--accent2)!important;box-shadow:0 0 0 3px rgba(14,165,233,.14);}
 button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focus-visible,.act-edit-btn:focus-visible,.modal-close:focus-visible{outline:3px solid rgba(14,165,233,.28);outline-offset:2px;}
 .app-header{box-shadow:0 4px 18px rgba(15,22,35,.18);}
 .logo{display:flex;align-items:center;gap:1px;}
@@ -251,7 +255,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 .stat-box.active-stat{background:#f8fbff;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(14,165,233,.10),0 8px 24px rgba(15,23,42,.06);}
 .stat-label,.fg label,.log-field-label{letter-spacing:.8px;}
 .overall-bar-track{box-shadow:inset 0 1px 2px rgba(15,23,42,.12);}
-.btn{min-height:32px;justify-content:center;}
+.btn{justify-content:center;}
 .btn-amber{box-shadow:0 1px 2px rgba(15,23,42,.08),0 6px 16px rgba(245,158,11,.18);}
 .btn-blue{box-shadow:0 1px 2px rgba(15,23,42,.08),0 6px 16px rgba(14,165,233,.18);}
 .btn-danger{box-shadow:0 1px 2px rgba(15,23,42,.08),0 6px 16px rgba(239,68,68,.16);}
@@ -266,10 +270,10 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 .fg input,.fg select,.fg textarea,.labour-row input,.labour-row select,.equipment-row input,.equipment-row select{box-shadow:inset 0 1px 2px rgba(15,23,42,.03);}
 .fg input::placeholder,.fg textarea::placeholder,.labour-row input::placeholder,.equipment-row input::placeholder{color:#9aa7b7;}
 .activity-item{position:relative;overflow:hidden;}
-.activity-item::after{content:'';position:absolute;top:0;right:0;width:44px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55));pointer-events:none;}
-.activity-item.status-done{background:linear-gradient(to right,#ecfdf5,#fff 42%);}
-.activity-item.status-inprogress{background:linear-gradient(to right,#fffbeb,#fff 42%);}
-.activity-item.status-onhold{background:linear-gradient(to right,#fef2f2,#fff 42%);}
+.activity-item::after{display:none;}
+.activity-item.status-done{background:#fbfffc;}
+.activity-item.status-inprogress{background:#fffdf8;}
+.activity-item.status-onhold{background:#fffafa;}
 .act-cat{background:#f1f5f9;color:#334155;}
 .status-select{box-shadow:0 1px 2px rgba(15,23,42,.04);}
 .log-card-hd{background:#fff;}
@@ -323,7 +327,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 
 /* Mobile — 480px and below */
 @media(max-width:480px){
-  :root{--header-h:48px;--station-h:36px;--nav-h:34px;}
+  :root{--header-h:52px;--station-h:44px;--nav-h:46px;}
   .main-content{padding:10px;}
   .app-header{padding:0 10px;gap:6px;}
   .logo{font-size:18px;}
@@ -331,12 +335,13 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
   .user-chip-name{display:none;}
   .btn-logout{font-size:10px;padding:4px 8px;}
 
-  /* Stats — keep in one row, make compact */
-  .stats-strip{grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;}
-  .stat-box{padding:8px 6px;border-radius:8px;}
-  .stat-label{font-size:8px;letter-spacing:.5px;margin-bottom:3px;}
-  .stat-val{font-size:18px;}
-  .stat-sub{display:none;}
+  /* Stats remain readable and scroll as a compact summary rail. */
+  .stats-strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(124px,42vw);grid-template-columns:none;gap:8px;margin:0 -10px 12px;padding:0 10px 4px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;}
+  .stats-strip::-webkit-scrollbar{display:none;}
+  .stat-box{padding:10px 11px;border-radius:8px;scroll-snap-align:start;}
+  .stat-label{font-size:9px;letter-spacing:.55px;margin-bottom:3px;}
+  .stat-val{font-size:22px;}
+  .stat-sub{display:block;font-size:11px;}
 
   /* Progress bar */
   .overall-bar-wrap{padding:10px 12px;gap:10px;margin-bottom:10px;}
@@ -354,11 +359,11 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
   /* Forms */
   .fg2{grid-template-columns:1fr;}
   .sec-hd h2{font-size:14px;}
-  .btn-sm{padding:5px 10px;font-size:11px;}
+  .btn-sm{padding:7px 10px;min-height:38px;font-size:12px;}
 
   /* Nav */
-  .nav-tab{padding:0 9px;font-size:11px;}
-  .station-tab{padding:0 10px;font-size:11px;}
+  .nav-tab{padding:0 12px;font-size:12px;min-height:46px;}
+  .station-tab{padding:0 12px;font-size:12px;min-height:44px;}
   .station-pct{font-size:9px;padding:1px 5px;}
 
   /* Tables */
@@ -369,16 +374,17 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 
   /* Login */
   .login-box{padding:26px 20px;}
-  .role-cards{grid-template-columns:1fr 1fr;}
+  .role-cards{grid-template-columns:1fr;}
+  .login-screen{align-items:flex-start;padding:16px;overflow-y:auto;}
+  .login-box{margin:auto 0;padding:26px 20px;max-height:none;overflow:visible;}
   .modal-body{padding:14px;}
   .modal-ft{padding:12px 14px;}
 }
 
 /* Very small — 360px */
 @media(max-width:360px){
-  .stats-strip{grid-template-columns:repeat(3,1fr);gap:5px;}
-  .stat-box:nth-child(4),.stat-box:nth-child(5){display:none;}
-  .role-cards{grid-template-columns:1fr 1fr;}
+  .stats-strip{grid-template-columns:none;gap:8px;}
+  .role-cards{grid-template-columns:1fr;}
   .login-box{padding:22px 16px;}
   .nav-tab{padding:0 8px;font-size:10px;}
 }
@@ -409,16 +415,16 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       <button id="tab-signup" class="auth-tab-btn" onclick="showAuthTab('signup')">Create Account</button>
     </div>
 
-    <div class="login-err" id="login-err"></div>
+    <div class="login-err" id="login-err" role="alert" aria-live="polite"></div>
 
     <!-- SIGN IN FORM -->
     <div id="form-signin">
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Email Address</label>
+        <label for="login-email" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Email Address</label>
         <input type="email" id="login-email" placeholder="your@email.com" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="email">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Password</label>
+        <label for="login-pass" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Password</label>
         <input type="password" id="login-pass" placeholder="Password" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="current-password">
       </div>
       <button onclick="doLogin()" style="width:100%;padding:11px;background:var(--accent);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">Sign In</button>
@@ -428,39 +434,39 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
     <!-- SIGN UP FORM -->
     <div id="form-signup" style="display:none;">
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Full Name</label>
+        <label for="reg-name" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Full Name</label>
         <input type="text" id="reg-name" placeholder="Your full name" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Email Address</label>
+        <label for="reg-email" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Email Address</label>
         <input type="email" id="reg-email" placeholder="your@email.com" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="email">
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Password</label>
+        <label for="reg-pass" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Password</label>
         <input type="password" id="reg-pass" placeholder="Min 6 characters" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="new-password">
       </div>
 
       <!-- WHO ARE YOU -->
       <div style="margin-bottom:14px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;">I am a…</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div id="role-group-label" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:8px;">I am a…</div>
+        <div class="role-cards" role="radiogroup" aria-labelledby="role-group-label">
           <label id="role-opt-foreman" class="role-card selected-foreman" onclick="selectRole('foreman')">
-            <input type="radio" name="reg-role" value="foreman" checked style="display:none;">
+            <input type="radio" name="reg-role" value="foreman" checked>
             <span style="font-size:20px;">🟡</span>
             <div><div style="font-weight:700;font-size:13px;">Foreman</div><div style="font-size:10px;color:var(--muted);">Log daily site work</div></div>
           </label>
           <label id="role-opt-engineer" class="role-card" onclick="selectRole('engineer')">
-            <input type="radio" name="reg-role" value="engineer" style="display:none;">
+            <input type="radio" name="reg-role" value="engineer">
             <span style="font-size:20px;">🔵</span>
             <div><div style="font-weight:700;font-size:13px;">Engineer</div><div style="font-size:10px;color:var(--muted);">Supervise all sites</div></div>
           </label>
           <label id="role-opt-superior" class="role-card" onclick="selectRole('superior')">
-            <input type="radio" name="reg-role" value="superior" style="display:none;">
+            <input type="radio" name="reg-role" value="superior">
             <span style="font-size:20px;">🔴</span>
             <div><div style="font-weight:700;font-size:13px;">Superior</div><div style="font-size:10px;color:var(--muted);">Full access & reports</div></div>
           </label>
           <label id="role-opt-client" class="role-card" onclick="selectRole('client')">
-            <input type="radio" name="reg-role" value="client" style="display:none;">
+            <input type="radio" name="reg-role" value="client">
             <span style="font-size:20px;">⚪</span>
             <div><div style="font-weight:700;font-size:13px;">Client</div><div style="font-size:10px;color:var(--muted);">View reports only</div></div>
           </label>
@@ -469,7 +475,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 
       <!-- ASSIGNED SITE (for foreman) -->
       <div id="site-select-wrap" style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
-        <label style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Assigned Site</label>
+        <label for="reg-site" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Assigned Site</label>
         <select id="reg-site" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;">
           <option value="all">All Sites</option>
           <option value="ndeeba">TE Ndeeba Mbawo</option>
@@ -478,6 +484,8 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
           <option value="mpigi">RUBiS Mpigi-Nakirebe</option>
         </select>
       </div>
+
+      <p style="font-size:12px;line-height:1.5;color:var(--muted);margin:-4px 0 14px;">Role requests are reviewed by an administrator. New accounts start with view-only access.</p>
 
       <button onclick="doSignUp()" style="width:100%;padding:11px;background:var(--accent2);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:white;">Create Account</button>
       <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">Already have an account? <a href="#" onclick="showAuthTab('signin');return false;" style="color:var(--accent);font-weight:700;">Sign in</a></p>
@@ -507,16 +515,16 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 
 <!-- ══ NAV TABS ══ -->
 <div class="nav-tabs">
-  <div class="nav-tab active" onclick="goPage('activities',this)">📋 Activities</div>
-  <div class="nav-tab" onclick="goPage('daily',this)">🗓 Daily Log</div>
-  <div class="nav-tab" onclick="goPage('expenses',this)">💰 Expenses</div>
-  <div class="nav-tab" onclick="goPage('materials',this)">📦 Materials</div>
-  <div class="nav-tab" onclick="goPage('equipment',this)">🛠 Equipment</div>
-  <div class="nav-tab" onclick="goPage('labour',this)">👷 Labour</div>
-  <div class="nav-tab" onclick="goPage('instructions',this)">📌 Instructions</div>
-  <div class="nav-tab" onclick="goPage('report',this)">📄 Report</div>
-  <div class="nav-tab" id="tab-projects" onclick="goPage('projects',this)">🏗 Projects</div>
-  <div class="nav-tab" id="tab-admin" style="display:none;" onclick="goPage('admin',this)">⚙ Users</div>
+  <button type="button" class="nav-tab active" aria-current="page" onclick="goPage('activities',this)">📋 Activities</button>
+  <button type="button" class="nav-tab" onclick="goPage('daily',this)">🗓 Daily Log</button>
+  <button type="button" class="nav-tab" onclick="goPage('expenses',this)">💰 Expenses</button>
+  <button type="button" class="nav-tab" onclick="goPage('materials',this)">📦 Materials</button>
+  <button type="button" class="nav-tab" onclick="goPage('equipment',this)">🛠 Equipment</button>
+  <button type="button" class="nav-tab" onclick="goPage('labour',this)">👷 Labour</button>
+  <button type="button" class="nav-tab" onclick="goPage('instructions',this)">📌 Instructions</button>
+  <button type="button" class="nav-tab" onclick="goPage('report',this)">📄 Report</button>
+  <button type="button" class="nav-tab" id="tab-projects" onclick="goPage('projects',this)">🏗 Projects</button>
+  <button type="button" class="nav-tab" id="tab-admin" style="display:none;" onclick="goPage('admin',this)">⚙ Users</button>
 </div>
 
 <!-- ══ CONTENT ══ -->
@@ -1297,7 +1305,16 @@ async function doLogin() {
   const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
-  if (!email || !pass) { errEl.textContent='Please enter email and password.'; errEl.style.display='block'; return; }
+  document.getElementById('login-email').removeAttribute('aria-invalid');
+  document.getElementById('login-pass').removeAttribute('aria-invalid');
+  if (!email || !pass) {
+    errEl.textContent='Please enter email and password.';
+    errEl.style.display='block';
+    const firstInvalid = !email ? document.getElementById('login-email') : document.getElementById('login-pass');
+    firstInvalid.setAttribute('aria-invalid','true');
+    firstInvalid.focus();
+    return;
+  }
   try {
     const r = await fetch(`${FB_AUTH}:signInWithPassword?key=${FB_API_KEY}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2038,9 +2055,10 @@ function avgPct(works){if(!works.length)return 0;return Math.round(works.reduce(
 // NAV
 // ════════════════════════════════════════
 function goPage(page, el){
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>{t.classList.remove('active');t.removeAttribute('aria-current');});
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
+  el.setAttribute('aria-current','page');
   document.getElementById('page-'+page).classList.add('active');
   if(page==='activities') renderActivitiesPage();
   if(page==='daily') renderDaily();
@@ -2063,11 +2081,11 @@ function renderStationTabs(){
     const d = getSiteData(k);
     const pct = avgPct(d.works);
     const isActive = k===activeSite;
-    return `<div class="station-tab ${isActive?'active':''}" onclick="switchSite('${k}')" style="${isActive?'border-bottom-color:'+def.color:''}">
+    return `<button type="button" class="station-tab ${isActive?'active':''}" ${isActive?'aria-current="true"':''} onclick="switchSite('${k}')" style="${isActive?'border-bottom-color:'+def.color:''}">
       <div class="station-dot" style="background:${def.color};${isActive?'':'opacity:.4'}"></div>
       <span>${def.name}</span>
       <span class="station-pct" style="${isActive?'background:'+def.color+'22;color:'+def.color:''}">${pct}%</span>
-    </div>`;
+    </button>`;
   }).join('');
 }
 
@@ -2099,11 +2117,11 @@ function renderStats(){
     {label:'Not Started',val:notstarted,col:'#9ca3af',f:'notstarted',sub:'yet to begin'},
     {label:'On Hold',val:onhold,col:'#ef4444',f:'onhold',sub:'blocked/paused'},
   ].map(s=>`
-    <div class="stat-box ${activeFilter===s.f?'active-stat':''}" style="border-top-color:${activeFilter===s.f?s.col:'transparent'};" onclick="filterActs('${s.f}')">
+    <button type="button" class="stat-box ${activeFilter===s.f?'active-stat':''}" ${activeFilter===s.f?'aria-pressed="true"':'aria-pressed="false"'} style="border-top-color:${activeFilter===s.f?s.col:'transparent'};" onclick="filterActs('${s.f}')">
       <div class="stat-label">${s.label}</div>
       <div class="stat-val" style="color:${s.col};">${s.val}</div>
       <div class="stat-sub">${s.sub}</div>
-    </div>`).join('');
+    </button>`).join('');
 
   document.getElementById('overall-bar-fill').style.width = pct+'%';
   document.getElementById('overall-bar-pct').textContent = pct+'%';
