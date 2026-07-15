@@ -130,6 +130,17 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .act-cat{background:var(--surface);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
 .act-notes{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .act-completion{font-size:11px;color:#16a34a;margin-top:3px;font-weight:600;}
+.scope-list{display:grid;gap:5px;margin-top:10px;padding-top:9px;border-top:1px solid #e8edf3;}
+.scope-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#334155;cursor:pointer;line-height:1.4;}
+.scope-check input{width:16px;height:16px;margin-top:1px;accent-color:var(--success);flex-shrink:0;}
+.scope-check.done span{text-decoration:line-through;color:#94a3b8;}
+.scope-summary{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:2px;letter-spacing:.35px;text-transform:uppercase;}
+.scope-builder{display:grid;gap:7px;margin-top:8px;}
+.scope-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.scope-row input[type="checkbox"]{width:18px;height:18px;accent-color:var(--success);}
+.scope-row input[type="text"]{min-height:38px;width:100%;padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;background:white;}
+.scope-row .scope-remove{width:34px;height:34px;border:0;border-radius:7px;background:#fee2e2;color:#991b1b;cursor:pointer;font-weight:800;}
+.scope-help{font-size:12px;color:var(--muted);line-height:1.5;margin-top:5px;}
 .status-select{padding:7px 28px 7px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Nunito Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;background:white;transition:border-color .12s,background .12s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%2364748b' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;min-width:115px;}
 .status-select:focus{outline:none;box-shadow:0 0 0 3px rgba(14,165,233,.15);}
 .status-select.s-done{border-color:var(--success);color:#15803d;background-color:#f0fdf4;}
@@ -744,6 +755,14 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="fg"><label>Date Started</label><input type="date" id="na-startdate"></div>
       </div>
       <div class="fg"><label>Scope / Description</label><textarea id="na-notes" placeholder="Brief description, BoQ reference, dimensions, quantities..." style="min-height:70px;"></textarea></div>
+      <div class="fg">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <label style="margin:0;">Scope Items</label>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addScopeRow('na-scope-items')">+ Add Part</button>
+        </div>
+        <p class="scope-help">Break the activity into measurable parts. Progress will be calculated automatically as each part is completed.</p>
+        <div class="scope-builder" id="na-scope-items"></div>
+      </div>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;margin-top:4px;">
         💡 This activity will be added to the <strong id="na-site-label"></strong> activities list and saved to the database.
       </div>
@@ -788,6 +807,14 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         </div>
       </div>
       <div class="fg"><label>Scope / BoQ Reference</label><textarea id="a-notes" style="min-height:55px;"></textarea></div>
+      <div class="fg">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <label style="margin:0;">Scope Items</label>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="addScopeRow('a-scope-items')">+ Add Part</button>
+        </div>
+        <p class="scope-help">Tick completed parts below. The activity percentage and status update automatically.</p>
+        <div class="scope-builder" id="a-scope-items"></div>
+      </div>
       <div class="fg"><label>✅ Completion Remarks</label><textarea id="a-completion" placeholder="How was it done? Variations, quality notes, who signed off..."></textarea></div>
       <div class="fg"><label>⚠ Blockers / Issues</label><textarea id="a-blockers" style="min-height:55px;" placeholder="Anything delaying or affecting this work item..."></textarea></div>
     </div>
@@ -2299,6 +2326,64 @@ async function renderProjects() {
 // ════════════════════════════════════════
 // ADD ACTIVITY
 // ════════════════════════════════════════
+function makeScopeId(){ return 'scope_'+Date.now()+'_'+Math.floor(Math.random()*100000); }
+function addScopeRow(containerId, item={}) {
+  const wrap=document.getElementById(containerId); if(!wrap) return;
+  const row=document.createElement('div');
+  row.className='scope-row';
+  row.dataset.scopeId=item.id||makeScopeId();
+  row.innerHTML=`<input type="checkbox" ${item.done?'checked':''} aria-label="Scope item completed" onchange="updateScopeProgressPreview('${containerId}')">
+    <input type="text" value="${escAttr(item.text||'')}" placeholder="e.g. Excavate trench, cast concrete, install covers" oninput="updateScopeProgressPreview('${containerId}')">
+    <button type="button" class="scope-remove" aria-label="Remove scope item" title="Remove scope item">✕</button>`;
+  row.querySelector('.scope-remove').addEventListener('click',()=>{row.remove();updateScopeProgressPreview(containerId);});
+  wrap.appendChild(row);
+  row.querySelector('input[type="text"]').focus();
+  updateScopeProgressPreview(containerId);
+}
+function setScopeRows(containerId, items=[]) {
+  const wrap=document.getElementById(containerId); if(!wrap) return;
+  wrap.innerHTML='';
+  items.forEach(item=>addScopeRow(containerId,item));
+}
+function getScopeRows(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} .scope-row`)).map(row=>({
+    id:row.dataset.scopeId||makeScopeId(),
+    text:row.querySelector('input[type="text"]').value.trim(),
+    done:row.querySelector('input[type="checkbox"]').checked
+  })).filter(item=>item.text);
+}
+function scopeProgress(items=[]) {
+  if(!items.length) return null;
+  return Math.round(items.filter(item=>item.done).length/items.length*100);
+}
+function updateScopeProgressPreview(containerId) {
+  const items=getScopeRows(containerId);
+  const pct=scopeProgress(items);
+  const prefix=containerId==='a-scope-items'?'a':'na';
+  const pctInput=document.getElementById(prefix+'-pct');
+  const statusInput=document.getElementById(prefix+'-status');
+  if(pct===null){if(pctInput)pctInput.disabled=false;if(statusInput)statusInput.disabled=false;return;}
+  if(pctInput){pctInput.value=pct;pctInput.disabled=true;}
+  if(statusInput){statusInput.value=pct===100?'done':pct===0?'notstarted':'inprogress';statusInput.disabled=true;}
+}
+function applyScopeProgress(activity) {
+  const pct=scopeProgress(activity.scopeItems||[]);
+  if(pct===null) return false;
+  activity.pct=pct;
+  if(pct===100){activity.status='done';if(!activity.enddate)activity.enddate=new Date().toISOString().slice(0,10);}
+  else if(pct===0){activity.status='notstarted';activity.enddate='';}
+  else{activity.status='inprogress';activity.enddate='';if(!activity.startdate)activity.startdate=new Date().toISOString().slice(0,10);}
+  return true;
+}
+async function toggleScopeItem(activityId,scopeId,done) {
+  const activity=state.works.find(item=>item.id===activityId); if(!activity) return;
+  const scope=(activity.scopeItems||[]).find(item=>item.id===scopeId); if(!scope) return;
+  scope.done=done;
+  applyScopeProgress(activity);
+  renderStats(); renderActivityList(); renderStationTabs();
+  await saveSite();
+}
+
 // ── Add new activity ──
 function openAddActivity() {
   const def = SITE_DEFS[activeSite];
@@ -2308,6 +2393,10 @@ function openAddActivity() {
   document.getElementById('na-pct').value = 0;
   document.getElementById('na-startdate').value = '';
   document.getElementById('na-notes').value = '';
+  document.getElementById('na-pct').disabled = false;
+  document.getElementById('na-status').disabled = false;
+  setScopeRows('na-scope-items',[]);
+  addScopeRow('na-scope-items');
   document.getElementById('na-site-label').textContent = def.name;
   openModal('modal-add-activity');
 }
@@ -2315,6 +2404,7 @@ function openAddActivity() {
 async function saveNewActivity() {
   const name = document.getElementById('na-name').value.trim();
   if (!name) { alert('Please enter an activity name.'); return; }
+  const scopeItems=getScopeRows('na-scope-items');
   const status = document.getElementById('na-status').value;
   const pct = status === 'done' ? 100 : parseInt(document.getElementById('na-pct').value) || 0;
   const activity = {
@@ -2328,9 +2418,11 @@ async function saveNewActivity() {
     notes:     document.getElementById('na-notes').value,
     completion: '',
     blockers:  '',
+    scopeItems,
     addedBy:   currentUser?.name || '',
     custom:    true
   };
+  applyScopeProgress(activity);
   state.works.push(activity);
   await saveSite();
   closeModal('modal-add-activity');
@@ -2352,6 +2444,19 @@ function filterActs(f){
   });
   renderStats();
   renderActivityList();
+}
+
+function renderActivityScopes(w) {
+  const items=(w.scopeItems||[]).filter(item=>item&&item.text);
+  if(!items.length) return '';
+  const done=items.filter(item=>item.done).length;
+  return `<div class="scope-list">
+    <div class="scope-summary">Scope progress: ${done} of ${items.length} parts complete</div>
+    ${items.map(item=>`<label class="scope-check ${item.done?'done':''}">
+      <input type="checkbox" ${item.done?'checked':''} ${canEdit()?'':'disabled'} onchange="toggleScopeItem('${jsArg(w.id)}','${jsArg(item.id)}',this.checked)">
+      <span>${esc(item.text)}</span>
+    </label>`).join('')}
+  </div>`;
 }
 
 function renderActivityList(){
@@ -2395,6 +2500,7 @@ function renderActivityList(){
         </div>
 	        ${w.completion?`<div class="act-completion">✓ ${esc(w.completion)}</div>`:''}
 	        ${w.notes&&!w.completion?`<div class="act-notes">${esc(w.notes.slice(0,90))}${w.notes.length>90?'…':''}</div>`:''}
+	        ${renderActivityScopes(w)}
       </div>
       <div class="act-pct-col">
         <div style="position:relative;width:52px;height:52px;margin:0 auto;">
@@ -2403,16 +2509,16 @@ function renderActivityList(){
         </div>
       </div>
       <div class="act-status-col">
-	        <select class="status-select s-${escAttr(st)}" onchange="quickStatusChange('${jsArg(w.id)}',this.value)">
+	        <select class="status-select s-${escAttr(st)}" onchange="quickStatusChange('${jsArg(w.id)}',this.value)" ${!canEdit()||(w.scopeItems||[]).length?'disabled':''} ${(w.scopeItems||[]).length?'title="Status is calculated from scope items"':''}>
           <option value="notstarted" ${st==='notstarted'?'selected':''}>Not Started</option>
           <option value="inprogress" ${st==='inprogress'?'selected':''}>In Progress</option>
           <option value="done" ${st==='done'?'selected':''}>Completed</option>
           <option value="onhold" ${st==='onhold'?'selected':''}>On Hold</option>
         </select>
-	        ${st==='inprogress'?`<input type="range" min="0" max="100" value="${escAttr(w.pct)}" oninput="quickPctChange('${jsArg(w.id)}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
+	        ${st==='inprogress'&&!(w.scopeItems||[]).length?`<input type="range" min="0" max="100" value="${escAttr(w.pct)}" oninput="quickPctChange('${jsArg(w.id)}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
       </div>
       <div class="act-btn-col">
-	        <button class="act-edit-btn" onclick="openEditAct('${jsArg(w.id)}')" title="Update ${escAttr(w.name)}" aria-label="Update ${escAttr(w.name)}">✎</button>
+	        ${canEdit()?`<button class="act-edit-btn" onclick="openEditAct('${jsArg(w.id)}')" title="Update ${escAttr(w.name)}" aria-label="Update ${escAttr(w.name)}">✎</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -2466,6 +2572,10 @@ function openEditAct(id){
   document.getElementById('a-notes').value = w.notes||'';
   document.getElementById('a-completion').value = w.completion||'';
   document.getElementById('a-blockers').value = w.blockers||'';
+  document.getElementById('a-pct').disabled = false;
+  document.getElementById('a-status').disabled = false;
+  setScopeRows('a-scope-items',w.scopeItems||[]);
+  updateScopeProgressPreview('a-scope-items');
   openModal('modal-act');
 }
 async function saveActivity(){
@@ -2479,6 +2589,8 @@ async function saveActivity(){
   w.notes = document.getElementById('a-notes').value;
   w.completion = document.getElementById('a-completion').value;
   w.blockers = document.getElementById('a-blockers').value;
+  w.scopeItems = getScopeRows('a-scope-items');
+  applyScopeProgress(w);
   if(st==='done'&&!w.enddate) w.enddate=new Date().toISOString().slice(0,10);
   await saveSite(); closeModal('modal-act'); renderStats(); renderActivityList(); renderStationTabs();
 }
@@ -2778,6 +2890,7 @@ function renderReport(){
       <div class="prog-bar"><div class="prog-fill" style="width:${escAttr(item.pct)}%;background:${escAttr(col)};"></div></div>
       ${item.enddate?`<div style="font-size:10px;color:#16a34a;">Completed: ${fmtDate(item.enddate)}</div>`:''}
       ${item.completion?`<div style="font-size:10px;color:#16a34a;font-style:italic;">${esc(item.completion)}</div>`:''}
+      ${item.scopeItems&&item.scopeItems.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">${item.scopeItems.map(scope=>`<span class="badge ${scope.done?'b-green':'b-gray'}" style="text-transform:none;">${scope.done?'✓':'○'} ${esc(scope.text)}</span>`).join('')}</div>`:''}
     </div>`;}).join('')}`:''}
     ${state.equipment&&state.equipment.length?`<div class="rep-h3">EQUIPMENT & TOOLS (${state.equipment.length})</div>
     <div class="table-wrap" style="box-shadow:none;margin-bottom:12px;"><table class="t">
