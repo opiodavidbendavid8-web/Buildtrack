@@ -508,7 +508,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         </select>
       </div>
 
-      <p style="font-size:12px;line-height:1.5;color:var(--muted);margin:-4px 0 14px;">Role requests are reviewed by an administrator. New accounts start with view-only access.</p>
+      <p style="font-size:12px;line-height:1.5;color:var(--muted);margin:-4px 0 14px;">Role requests are reviewed by an administrator. You can sign in once your account has been approved.</p>
 
       <button onclick="doSignUp()" style="width:100%;padding:11px;background:var(--accent2);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:white;">Create Account</button>
       <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">Already have an account? <a href="#" onclick="showAuthTab('signin');return false;" style="color:var(--accent);font-weight:700;">Sign in</a></p>
@@ -527,7 +527,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       <span class="user-chip-name" id="user-name-hd">—</span>
       <span id="user-role-badge" class="role-pill role-foreman" style="font-size:9px;"></span>
     </div>
-    <button class="btn btn-ghost btn-sm" style="color:#e2e8f0;border-color:rgba(255,255,255,.2);" onclick="openProjectSetup()">⚙ Info</button>
+    <button class="btn btn-ghost btn-sm" id="btn-project-info" style="color:#e2e8f0;border-color:rgba(255,255,255,.2);" onclick="openProjectSetup()">⚙ Info</button>
     <button class="btn btn-amber btn-sm" id="btn-new-log" onclick="openNewLog()">+ Log</button>
     <button id="btn-logout" onclick="doLogout()" class="btn-logout" style="display:none;" title="Sign out" aria-label="Sign out">Sign Out</button>
   </div>
@@ -1310,7 +1310,9 @@ function esc(v) {
 }
 function escAttr(v) { return esc(v).replace(/`/g, '&#96;'); }
 function jsArg(v) {
-  return String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/[\r\n\u2028\u2029]/g, ' ');
+  // Also neutralise " and < so a stored value can never break out of the
+  // double-quoted on* attribute this is embedded in.
+  return String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\x22').replace(/</g, '\\x3c').replace(/[\r\n\u2028\u2029]/g, ' ');
 }
 
 async function refreshAuthToken() {
@@ -1332,7 +1334,8 @@ async function authFetch(url, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (currentUser?.idToken) headers.Authorization = `Bearer ${currentUser.idToken}`;
   let res = await fetch(url, { ...options, headers });
-  if ((res.status === 401 || res.status === 403) && await refreshAuthToken()) {
+  // 401 = expired/invalid token (refreshable); 403 = a rules denial, refreshing won't help.
+  if (res.status === 401 && await refreshAuthToken()) {
     const retryHeaders = { ...(options.headers || {}), Authorization: `Bearer ${currentUser.idToken}` };
     res = await fetch(url, { ...options, headers: retryHeaders });
   }
@@ -1344,6 +1347,7 @@ async function doLogin() {
   const pass  = document.getElementById('login-pass').value;
   const errEl = document.getElementById('login-err');
   errEl.style.display = 'none';
+  errEl.style.background = ''; errEl.style.color = ''; errEl.style.borderColor = ''; errEl.style.borderLeftColor = '';
   document.getElementById('login-email').removeAttribute('aria-invalid');
   document.getElementById('login-pass').removeAttribute('aria-invalid');
   if (!email || !pass) {
@@ -1368,7 +1372,9 @@ async function doLogin() {
     currentUser = {uid:j.localId, email:j.email, name:j.email, role:'client', site:'all', idToken:j.idToken, refreshToken:j.refreshToken};
     const profile = await fsGet('users', j.localId);
     if (!profile) { currentUser=null; errEl.textContent='Account not set up. Contact your administrator.'; errEl.style.display='block'; return; }
-    currentUser = {uid:j.localId, email:j.email, name:profile.name||j.email, role:profile.role||'foreman', site:profile.site||'all', idToken:j.idToken, refreshToken:j.refreshToken};
+    if (profile.status === 'pending') { currentUser=null; errEl.textContent='Your account is awaiting administrator approval.'; errEl.style.display='block'; return; }
+    if (profile.status === 'disabled') { currentUser=null; errEl.textContent='This account has been disabled. Contact your administrator.'; errEl.style.display='block'; return; }
+    currentUser = {uid:j.localId, email:j.email, name:profile.name||j.email, role:profile.role||'client', site:profile.site||'all', idToken:j.idToken, refreshToken:j.refreshToken};
     localStorage.setItem('bt_user', JSON.stringify(currentUser));
     startApp();
   } catch(e) { errEl.textContent='Network error. Check your connection.'; errEl.style.display='block'; }
@@ -1427,8 +1433,12 @@ async function doSignUp() {
     currentUser = { uid:j.localId, email:j.email, name, role, site, idToken:j.idToken, refreshToken:j.refreshToken };
     // Save profile to Firestore. Elevated roles must be assigned later by a superior/admin.
     await fsSet('users', j.localId, { name, email, role, site, requestedRole:selectedRole, createdAt: new Date().toISOString(), status: 'pending' });
-    localStorage.setItem('bt_user', JSON.stringify(currentUser));
-    startApp();
+    // Pending accounts cannot read site data yet, so stay on the login screen.
+    currentUser = null;
+    showAuthTab('signin');
+    errEl.textContent = '✓ Account created. An administrator must approve it before you can sign in.';
+    errEl.style.background = '#f0fdf4'; errEl.style.color = '#166534'; errEl.style.borderColor = '#bbf7d0'; errEl.style.borderLeftColor = '#22c55e';
+    errEl.style.display = 'block';
   } catch(e) {
     errEl.textContent = 'Network error. Check your connection and try again.';
     errEl.style.display='block';
@@ -1466,10 +1476,10 @@ function startApp() {
   if (currentUser.role==='superior') document.getElementById('tab-admin').style.display='';
   // Show Word report button for engineer/superior
   if (currentUser.role==='superior'||currentUser.role==='engineer') document.getElementById('btn-word-report').style.display='';
-  // Hide add buttons for client
-  if (currentUser.role==='client') {
-    ['btn-new-log','btn-new-expense','btn-new-material','btn-new-equipment','btn-add-activity','btn-add-project'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-  }
+  // Hide edit buttons for client (and restore them for everyone else,
+  // in case a client signed out and a staff member signed in after).
+  const editBtns = ['btn-new-log','btn-new-expense','btn-new-material','btn-new-equipment','btn-add-activity','btn-add-project','btn-project-info'];
+  editBtns.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=currentUser.role==='client'?'none':'';});
   // Load correct site
   if (currentUser.site!=='all') activeSite = currentUser.site;
   loadSite(activeSite).then(()=>{ renderStationTabs(); renderActivitiesPage(); });
@@ -1492,14 +1502,17 @@ function handlePhotoUpload(input) {
       // Compress to max 600px wide
       const img = new Image();
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxW = 600;
-        const scale = Math.min(1, maxW / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        pendingPhotos.push({dataUrl, name: file.name});
+        const shrink = (maxW, q) => {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(1, maxW / img.width);
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          return canvas.toDataURL('image/jpeg', q);
+        };
+        // Full image goes to its own photos/{id} document; only the tiny
+        // thumb is stored inline in the site document (1MB doc limit).
+        pendingPhotos.push({dataUrl: shrink(600, 0.7), thumb: shrink(140, 0.55), name: file.name});
         renderPhotoGrid();
       };
       img.src = e.target.result;
@@ -1514,7 +1527,7 @@ function renderPhotoGrid() {
   if (!grid) return;
   const thumbs = pendingPhotos.map((p,i) => `
     <div style="position:relative;">
-      <img src="${escAttr(p.dataUrl)}" class="photo-thumb" onclick="viewPhoto('${jsArg(p.dataUrl)}')" title="${escAttr(p.name)}">
+      <img src="${escAttr(p.thumb||p.dataUrl)}" class="photo-thumb" onclick="${p.id?`viewPhotoById('${jsArg(p.id)}')`:`viewPhoto('${jsArg(p.dataUrl)}')`}" title="${escAttr(p.name)}">
       <button onclick="removePhoto(${i})" style="position:absolute;top:-5px;right:-5px;background:var(--danger);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
     </div>`).join('');
   grid.innerHTML = thumbs + (pendingPhotos.length < 5 ? `<label class="photo-upload-btn" for="photo-file-input" title="Add photo">+</label><input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(this)">` : '');
@@ -1527,12 +1540,26 @@ function viewPhoto(src) {
   openModal('modal-photo');
 }
 
+// Fetch a full-size photo from its own photos/{id} document on demand.
+async function viewPhotoById(id) {
+  try {
+    setSyncStatus('loading');
+    const d = await fsGet('photos', id);
+    setSyncStatus('live');
+    if (d?.dataUrl) viewPhoto(d.dataUrl);
+    else alert('Photo not found.');
+  } catch(e) {
+    setSyncStatus('error');
+    alert('Could not load photo. Check your connection.');
+  }
+}
+
 function renderLogPhotos(photos) {
   if (!photos||!photos.length) return '';
   return `<div class="log-field">
     <div class="log-field-label">📸 Site Photos (${photos.length})</div>
     <div class="photo-grid" style="margin-top:6px;">
-      ${photos.map(p=>`<img src="${escAttr(p.dataUrl)}" class="photo-thumb" onclick="viewPhoto('${jsArg(p.dataUrl)}')" title="${escAttr(p.name||'Photo')}">`).join('')}
+      ${photos.map(p=>`<img src="${escAttr(p.thumb||p.dataUrl)}" class="photo-thumb" onclick="${p.id?`viewPhotoById('${jsArg(p.id)}')`:`viewPhoto('${jsArg(p.dataUrl)}')`}" title="${escAttr(p.name||'Photo')}">`).join('')}
     </div>
   </div>`;
 }
@@ -1822,6 +1849,14 @@ async function fsList(col) {
 async function fsDelete(col,id) {
   await authFetch(`${FB_BASE}/${col}/${id}?key=${FB_API_KEY}`,{method:'DELETE'});
 }
+// ── PATCH only the given fields (fsSet replaces the whole document) ──
+async function fsUpdate(col, docId, data) {
+  const mask = Object.keys(data).map(k=>'updateMask.fieldPaths='+encodeURIComponent(k)).join('&');
+  const url = `${FB_BASE}/${col}/${docId}?key=${FB_API_KEY}&${mask}`;
+  const body = { fields: Object.fromEntries(Object.entries(data).map(([k,v])=>[k,toFS(v)])) };
+  const res = await authFetch(url, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Firestore UPDATE failed: ${res.status}`);
+}
 
 function openAddUser() {
   if (currentUser?.role !== 'superior') { alert('Only a superior can add users.'); return; }
@@ -1843,14 +1878,31 @@ async function saveUser() {
     const r=await fetch(`${FB_AUTH}:signUp?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,returnSecureToken:true})});
     const j=await r.json();
     if(!r.ok){alert('Error: '+(j.error?.message||'Could not create account'));return;}
-    await fsSet('users',j.localId,{name,email,role,site,createdAt:new Date().toISOString()});
+    await fsSet('users',j.localId,{name,email,role,site,status:'active',createdAt:new Date().toISOString(),source:'superior-ui'});
     closeModal('modal-user'); renderAdmin(); alert(`✓ User "${name}" created successfully!`);
   } catch(e){alert('Error: '+e.message);}
 }
 async function deleteUser(uid) {
   if (currentUser?.role !== 'superior') { alert('Only a superior can remove users.'); return; }
-  if(!confirm('Remove this user profile?'))return;
+  if (uid === currentUser.uid) { alert('You cannot remove your own profile.'); return; }
+  if(!confirm('Remove this user profile? They will no longer be able to sign in. (To block them temporarily, set their status to Disabled instead.)'))return;
   await fsDelete('users',uid); renderAdmin();
+}
+const ADMIN_ROLES=['foreman','engineer','superior','client'];
+const ADMIN_STATUSES=['active','pending','disabled'];
+async function adminUpdateUser(uid, field, value) {
+  if (currentUser?.role !== 'superior') return;
+  try { await fsUpdate('users', uid, {[field]:value, updatedAt:new Date().toISOString()}); }
+  catch(e) { alert('Update failed. Check your connection and try again.'); }
+  renderAdmin();
+}
+async function approveUser(uid, requestedRole) {
+  if (currentUser?.role !== 'superior') return;
+  const update = {status:'active', updatedAt:new Date().toISOString()};
+  if (ADMIN_ROLES.includes(requestedRole)) update.role = requestedRole;
+  try { await fsUpdate('users', uid, update); }
+  catch(e) { alert('Approval failed. Check your connection and try again.'); }
+  renderAdmin();
 }
 async function renderAdmin() {
   const wrap=document.getElementById('admin-user-list'); if(!wrap)return;
@@ -1858,25 +1910,51 @@ async function renderAdmin() {
   try {
     const users=await fsList('users');
     if(!users.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">👥</div><p>No users yet. Add one above.</p></div>`;return;}
-    const roleColors={superior:'b-red',engineer:'b-blue',foreman:'b-amber',client:'b-gray'};
-    wrap.innerHTML=`<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+    // Pending signups first, then by name.
+    users.sort((a,b)=>((a.status==='pending')?0:1)-((b.status==='pending')?0:1)||String(a.name||'').localeCompare(String(b.name||'')));
+    const statusBadge={active:'b-green',pending:'b-amber',disabled:'b-red'};
+    const selStyle='font-size:11px;padding:4px 6px;border:1.5px solid var(--border);border-radius:5px;font-family:inherit;background:white;';
+    const siteOpts=[['all','All Sites'],...Object.entries(SITE_DEFS).map(([k,d])=>[k,d.name])];
+    const pendingCount=users.filter(u=>u.status==='pending').length;
+    wrap.innerHTML=`
+    ${pendingCount?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e;"><strong>${pendingCount} account${pendingCount>1?'s':''} awaiting approval.</strong> Pending accounts cannot see any site data until approved.</div>`:''}
+    <div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <thead><tr style="background:var(--ink);color:#e5e7eb;">
           <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Name</th>
-          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Email</th>
           <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Role</th>
           <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Site</th>
+          <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Status</th>
           <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;">Created</th>
           <th style="padding:8px 12px;"></th>
         </tr></thead>
-        <tbody>${users.map(u=>`<tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:9px 12px;font-weight:700;">${esc(u.name||'—')}</td>
-          <td style="padding:9px 12px;font-size:12px;">${esc(u.email||'—')}</td>
-          <td style="padding:9px 12px;"><span class="badge ${escAttr(roleColors[u.role]||'b-gray')}">${esc(u.role||'—')}</span></td>
-          <td style="padding:9px 12px;font-size:12px;">${esc(u.site==='all'?'All Sites':(SITE_DEFS[u.site]?.name||u.site||'—'))}</td>
+        <tbody>${users.map(u=>{
+          const isSelf=u.id===currentUser.uid;
+          const isPending=u.status==='pending';
+          return `<tr style="border-bottom:1px solid var(--border);${isPending?'background:#fffdf5;':''}">
+          <td style="padding:9px 12px;">
+            <div style="font-weight:700;">${esc(u.name||'—')}${isSelf?' <span class="badge b-blue" style="font-size:8px;">You</span>':''}</div>
+            <div style="font-size:11px;color:var(--muted);">${esc(u.email||'—')}</div>
+            ${isPending&&u.requestedRole?`<div style="font-size:10px;color:#92400e;margin-top:2px;">Requested role: <strong>${esc(u.requestedRole)}</strong></div>`:''}
+          </td>
+          <td style="padding:9px 12px;"><select ${isSelf?'disabled':''} onchange="adminUpdateUser('${jsArg(u.id)}','role',this.value)" style="${selStyle}">
+            ${ADMIN_ROLES.map(r=>`<option value="${r}"${u.role===r?' selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`).join('')}
+          </select></td>
+          <td style="padding:9px 12px;"><select onchange="adminUpdateUser('${jsArg(u.id)}','site',this.value)" style="${selStyle}">
+            ${siteOpts.map(([k,label])=>`<option value="${escAttr(k)}"${(u.site||'all')===k?' selected':''}>${esc(label)}</option>`).join('')}
+          </select></td>
+          <td style="padding:9px 12px;">
+            <select ${isSelf?'disabled':''} onchange="adminUpdateUser('${jsArg(u.id)}','status',this.value)" style="${selStyle}">
+              ${ADMIN_STATUSES.map(s=>`<option value="${s}"${(u.status||'active')===s?' selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+            </select>
+            <div style="margin-top:3px;"><span class="badge ${escAttr(statusBadge[u.status||'active']||'b-gray')}">${esc(u.status||'active')}</span></div>
+          </td>
           <td style="padding:9px 12px;font-size:11px;color:var(--muted);">${u.createdAt?fmtDate(u.createdAt.slice(0,10)):'—'}</td>
-          <td style="padding:9px 12px;"><button class="btn btn-danger btn-sm" onclick="deleteUser('${jsArg(u.id)}')">✕</button></td>
-        </tr>`).join('')}</tbody>
+          <td style="padding:9px 12px;"><div style="display:flex;gap:4px;">
+            ${isPending?`<button class="btn btn-green btn-sm" style="padding:4px 10px;" onclick="approveUser('${jsArg(u.id)}','${jsArg(u.requestedRole||'')}')">✓ Approve</button>`:''}
+            ${isSelf?'':`<button class="btn btn-danger btn-sm" style="padding:4px 10px;" onclick="deleteUser('${jsArg(u.id)}')">✕</button>`}
+          </div></td>
+        </tr>`;}).join('')}</tbody>
       </table>
     </div>`;
   } catch(e) { wrap.innerHTML=`<div class="empty"><div class="empty-ico">⚠</div><p>Could not load users.</p></div>`; }
@@ -2108,6 +2186,7 @@ function goPage(page, el){
   if(page==='instructions') renderInstructions();
   if(page==='report') renderReport();
   if(page==='projects') renderProjects();
+  if(page==='admin') renderAdmin();
 }
 
 // ════════════════════════════════════════
@@ -2505,7 +2584,7 @@ function renderActivityList(){
       <div class="act-pct-col">
         <div style="position:relative;width:52px;height:52px;margin:0 auto;">
           ${ring}
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:${ringColor};">${w.pct}%</div>
+          <div id="actpct-${escAttr(w.id)}" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:${ringColor};">${w.pct}%</div>
         </div>
       </div>
       <div class="act-status-col">
@@ -2515,7 +2594,7 @@ function renderActivityList(){
           <option value="done" ${st==='done'?'selected':''}>Completed</option>
           <option value="onhold" ${st==='onhold'?'selected':''}>On Hold</option>
         </select>
-	        ${st==='inprogress'&&!(w.scopeItems||[]).length?`<input type="range" min="0" max="100" value="${escAttr(w.pct)}" oninput="quickPctChange('${jsArg(w.id)}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
+	        ${st==='inprogress'&&!(w.scopeItems||[]).length?`<input type="range" min="0" max="100" value="${escAttr(w.pct)}" oninput="quickPctPreview('${jsArg(w.id)}',this.value)" onchange="quickPctChange('${jsArg(w.id)}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
       </div>
       <div class="act-btn-col">
 	        ${canEdit()?`<button class="act-edit-btn" onclick="openEditAct('${jsArg(w.id)}')" title="Update ${escAttr(w.name)}" aria-label="Update ${escAttr(w.name)}">✎</button>`:''}
@@ -2536,12 +2615,19 @@ async function quickStatusChange(id, val){
   await saveSite(); renderStats(); renderActivityList(); renderStationTabs();
 }
 
+// Fires continuously while dragging: update the label only, no network writes.
+function quickPctPreview(id, val){
+  const w = state.works.find(x=>x.id===id); if(!w) return;
+  w.pct = parseInt(val)||0;
+  const el = document.getElementById('actpct-'+id);
+  if(el) el.textContent = w.pct+'%';
+}
+// Fires once when the slider is released: persist and re-render.
 async function quickPctChange(id, val){
   const w = state.works.find(x=>x.id===id); if(!w) return;
-  w.pct = parseInt(val);
+  w.pct = parseInt(val)||0;
   if(w.pct===100){ w.status='done'; if(!w.enddate) w.enddate=new Date().toISOString().slice(0,10); }
   await saveSite(); renderStats(); renderStationTabs();
-  // update ring live
   renderActivityList();
 }
 
@@ -2689,16 +2775,38 @@ async function saveLog(){
     tomorrow:document.getElementById('l-tomorrow').value,
     labour:getLabourRows(),
     equipmentUsed:getEquipmentUseRows(),
-    photos:[...pendingPhotos],
+    photos:[],
     submittedBy:currentUser?.name||''
   };
   if(!log.date){alert('Set a date.');return;}
+  // Store each full-size photo as its own photos/{id} document so the site
+  // document never hits Firestore's 1MB limit; the log keeps {id, thumb, name}.
+  for (const p of pendingPhotos) {
+    if (p.id) { log.photos.push({id:p.id, thumb:p.thumb||'', name:p.name||''}); continue; }
+    if (p.dataUrl && p.thumb) {
+      const pid = 'ph_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
+      try {
+        await fsSet('photos', pid, {site:activeSite, dataUrl:p.dataUrl, name:p.name||'', uploadedBy:currentUser?.name||'', createdAt:new Date().toISOString()});
+        log.photos.push({id:pid, thumb:p.thumb, name:p.name||''});
+      } catch(e) {
+        // Offline fallback: keep the photo inline (legacy format) rather than lose it.
+        log.photos.push({dataUrl:p.dataUrl, name:p.name||''});
+      }
+    } else if (p.dataUrl) {
+      log.photos.push({dataUrl:p.dataUrl, name:p.name||''}); // legacy inline photo re-saved as-is
+    }
+  }
   if(editLogId){const i=state.logs.findIndex(l=>l.id===editLogId);if(i>-1)state.logs[i]=log;}
   else state.logs.unshift(log);
   pendingPhotos=[];
   await saveSite();closeModal('modal-log');renderDaily();
 }
-async function deleteLog(id){if(!confirm('Delete this log?'))return;state.logs=state.logs.filter(l=>l.id!==id);await saveSite();renderDaily();}
+async function deleteLog(id){
+  if(!confirm('Delete this log?'))return;
+  const l=state.logs.find(x=>x.id===id);
+  (l?.photos||[]).forEach(p=>{if(p.id)fsDelete('photos',p.id).catch(()=>{});});
+  state.logs=state.logs.filter(x=>x.id!==id);await saveSite();renderDaily();
+}
 function toggleLog(id){
   const b=document.getElementById('lb-'+id);const a=document.getElementById('la-'+id);
   b.classList.toggle('open');a.textContent=b.classList.contains('open')?'▴':'▾';
@@ -2928,7 +3036,7 @@ function renderReport(){
       currentUser = JSON.parse(saved);
       if (!currentUser?.uid || !currentUser?.idToken) throw new Error('Invalid saved session');
       const profile = await fsGet('users', currentUser.uid);
-      if (!profile || profile.status === 'disabled') throw new Error('Session profile unavailable');
+      if (!profile || profile.status === 'disabled' || profile.status === 'pending') throw new Error('Session profile unavailable');
       currentUser = {
         ...currentUser,
         name: profile.name || currentUser.email,

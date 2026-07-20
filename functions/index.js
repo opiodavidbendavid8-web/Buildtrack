@@ -1,6 +1,7 @@
 const admin = require("firebase-admin");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { onUserCreated } = require("firebase-functions/v2/identity");
+// Auth onCreate triggers only exist in the v1 API; v2 identity only has blocking triggers.
+const functionsV1 = require("firebase-functions/v1");
 
 admin.initializeApp();
 
@@ -46,8 +47,7 @@ function assertSite(site) {
   }
 }
 
-exports.createDefaultProfile = onUserCreated(async (event) => {
-  const user = event.data;
+exports.createDefaultProfile = functionsV1.auth.user().onCreate(async (user) => {
   const ref = db.collection("users").doc(user.uid);
   const snap = await ref.get();
   if (snap.exists) return;

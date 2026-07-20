@@ -39,12 +39,12 @@ Or from the repo root:
 firebase deploy --only functions,firestore:rules
 ```
 
-## Frontend Integration Still Needed
+## How the frontend uses this
 
-The current HTML app still directly calls Firebase Auth REST and Firestore REST. The next step is to update it to call these backend functions for:
+The HTML app talks to Firebase Auth REST and Firestore REST directly:
 
-- creating users
-- approving/updating roles
-- generating weekly report data
+- Signups create a `pending` profile; the rules block pending accounts from reading any data until a superior approves them from the Users page (which updates the profile document directly — `createManagedUser`/`updateUserProfile` above are optional server-side alternatives).
+- Full-size site photos are stored one-per-document in the `photos` collection; daily logs keep only small inline thumbnails so the per-site document stays under Firestore's 1MB limit.
+- `buildWeeklyReportData` is available but not yet called by the frontend.
 
-Direct Firestore reads/writes can remain for normal site data as long as rules are strict.
+After changing `firestore.rules`, redeploy them with `firebase deploy --only firestore:rules` — the app is not protected until the deployed rules match this repo.

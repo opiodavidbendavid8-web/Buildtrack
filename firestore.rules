@@ -21,7 +21,9 @@ service cloud.firestore {
     function isActive() {
       return signedIn()
         && exists(userPath(request.auth.uid))
-        && profile().status != 'disabled';
+        // Legacy profiles have no status field and count as active;
+        // 'pending' accounts must be approved by a superior before reading any data.
+        && profile().get('status', 'active') == 'active';
     }
 
     function isSuperior() {
@@ -50,7 +52,9 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow get: if isActive() && (request.auth.uid == uid || isSuperior());
+      // A user may always read their own profile (even while pending/disabled)
+      // so the app can show the right "awaiting approval" / "disabled" message.
+      allow get: if signedIn() && (request.auth.uid == uid || isSuperior());
       allow list: if isSuperior();
 
       allow create: if signedIn()
@@ -71,6 +75,14 @@ service cloud.firestore {
       allow get, list: if canUseSite(siteId);
       allow create, update: if canWriteSite(siteId);
       allow delete: if isSuperior();
+    }
+
+    // Full-size photos live one per document so the per-site document
+    // stays well under Firestore's 1MB limit.
+    match /photos/{photoId} {
+      allow get, list: if isActive();
+      allow create: if canWriteSite(request.resource.data.site);
+      allow update, delete: if canWriteSite(resource.data.site);
     }
 
     match /projects/{projectId} {
