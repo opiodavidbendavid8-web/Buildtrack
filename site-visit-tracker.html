@@ -237,7 +237,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .photo-upload-btn:hover{border-color:var(--accent2);color:var(--accent2);background:#eff6ff;}
 
 /* EMPTY */
-.empty{text-align:center;padding:48px 20px;color:#94a3b8;}
+.empty{text-align:center;padding:48px 20px;color:#5b6a7d;}
 .empty-ico{font-size:40px;margin-bottom:10px;opacity:.7;}
 .empty p{font-size:13px;line-height:1.7;}
 
@@ -312,6 +312,35 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 .prog-wrap{padding:8px 0;border-bottom:1px solid #eef2f7;}
 .prog-wrap:last-child{border-bottom:none;}
 
+/* ICONS */
+.ico{display:inline-flex;align-items:center;justify-content:center;line-height:0;vertical-align:-0.14em;flex-shrink:0;}
+.ico svg{width:1em;height:1em;display:block;}
+.ico-spin svg{animation:icospin .9s linear infinite;}
+@keyframes icospin{to{transform:rotate(360deg);}}
+.nav-tab,.station-tab{gap:7px;}
+.nav-tab .ico{font-size:16px;}
+.role-dot{width:13px;height:13px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 0 3px rgba(15,23,42,.05);}
+.log-field-label .ico,.data-card-hd .ico,.sec-hd .ico{font-size:1.05em;}
+
+/* TOASTS */
+.toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;flex-direction:column;gap:8px;align-items:center;width:auto;max-width:calc(100vw - 24px);pointer-events:none;}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(15,22,35,.28);font-size:13px;font-weight:600;max-width:440px;animation:toastIn .22s cubic-bezier(.34,1.4,.64,1);border-left:4px solid var(--accent2);}
+.toast.leaving{animation:toastOut .2s ease forwards;}
+.toast-ico{font-size:15px;flex-shrink:0;display:flex;}
+.toast.success{border-left-color:var(--success);}
+.toast.error{border-left-color:var(--danger);}
+.toast.info{border-left-color:var(--accent2);}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes toastOut{to{opacity:0;transform:translateY(10px) scale(.97);}}
+
+/* CONFIRM DIALOG */
+.confirm-box{background:var(--card);border-radius:var(--radius-lg);width:400px;max-width:calc(100vw - 32px);box-shadow:var(--shadow-lg);animation:loginPop .22s cubic-bezier(.34,1.4,.64,1);overflow:hidden;}
+.confirm-body{padding:22px 22px 8px;}
+.confirm-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px;display:flex;align-items:center;gap:9px;}
+.confirm-msg{font-size:13px;line-height:1.6;color:var(--ink2);}
+.confirm-ft{padding:14px 22px 18px;display:flex;gap:8px;justify-content:flex-end;}
+.confirm-overlay{align-items:center;padding:20px;}
+
 /* RESPONSIVE */
 @media(min-width:1024px){
   .main-content{padding:24px 32px;}
@@ -351,7 +380,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
   #user-role-badge{display:none!important;}
   .app-header .btn-ghost{display:none;}
   .btn-logout{width:36px;height:36px;padding:0;font-size:0;display:flex;align-items:center;justify-content:center;}
-  .btn-logout::before{content:'↪';font-size:18px;color:#cbd5e1;}
+  .btn-logout::before{content:'';display:inline-block;width:18px;height:18px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/%3E%3Cpath d='M16 17l5-5-5-5M21 12H9'/%3E%3C/svg%3E") center/contain no-repeat;}
   #btn-new-log{padding:7px 10px;min-width:52px;}
 
   /* Stats remain readable and scroll as a compact summary rail. */
@@ -475,22 +504,22 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="role-cards" role="radiogroup" aria-labelledby="role-group-label">
           <label id="role-opt-foreman" class="role-card selected-foreman" onclick="selectRole('foreman')">
             <input type="radio" name="reg-role" value="foreman" checked>
-            <span style="font-size:20px;">🟡</span>
+            <span class="role-dot" style="background:#f59e0b;"></span>
             <div><div style="font-weight:700;font-size:13px;">Foreman</div><div style="font-size:10px;color:var(--muted);">Log daily site work</div></div>
           </label>
           <label id="role-opt-engineer" class="role-card" onclick="selectRole('engineer')">
             <input type="radio" name="reg-role" value="engineer">
-            <span style="font-size:20px;">🔵</span>
+            <span class="role-dot" style="background:#0ea5e9;"></span>
             <div><div style="font-weight:700;font-size:13px;">Engineer</div><div style="font-size:10px;color:var(--muted);">Supervise all sites</div></div>
           </label>
           <label id="role-opt-superior" class="role-card" onclick="selectRole('superior')">
             <input type="radio" name="reg-role" value="superior">
-            <span style="font-size:20px;">🔴</span>
+            <span class="role-dot" style="background:#ef4444;"></span>
             <div><div style="font-weight:700;font-size:13px;">Superior</div><div style="font-size:10px;color:var(--muted);">Full access & reports</div></div>
           </label>
           <label id="role-opt-client" class="role-card" onclick="selectRole('client')">
             <input type="radio" name="reg-role" value="client">
-            <span style="font-size:20px;">⚪</span>
+            <span class="role-dot" style="background:#94a3b8;"></span>
             <div><div style="font-weight:700;font-size:13px;">Client</div><div style="font-size:10px;color:var(--muted);">View reports only</div></div>
           </label>
         </div>
@@ -527,7 +556,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       <span class="user-chip-name" id="user-name-hd">—</span>
       <span id="user-role-badge" class="role-pill role-foreman" style="font-size:9px;"></span>
     </div>
-    <button class="btn btn-ghost btn-sm" id="btn-project-info" style="color:#e2e8f0;border-color:rgba(255,255,255,.2);" onclick="openProjectSetup()">⚙ Info</button>
+    <button class="btn btn-ghost btn-sm" id="btn-project-info" style="color:#e2e8f0;border-color:rgba(255,255,255,.2);" onclick="openProjectSetup()"><span class="ico" data-ico="info"></span> Info</button>
     <button class="btn btn-amber btn-sm" id="btn-new-log" onclick="openNewLog()">+ Log</button>
     <button id="btn-logout" onclick="doLogout()" class="btn-logout" style="display:none;" title="Sign out" aria-label="Sign out">Sign Out</button>
   </div>
@@ -538,16 +567,16 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 
 <!-- ══ NAV TABS ══ -->
 <div class="nav-tabs">
-  <button type="button" class="nav-tab active" aria-current="page" onclick="goPage('activities',this)">📋 Activities</button>
-  <button type="button" class="nav-tab" onclick="goPage('daily',this)">🗓 Daily Log</button>
-  <button type="button" class="nav-tab" onclick="goPage('expenses',this)">💰 Expenses</button>
-  <button type="button" class="nav-tab" onclick="goPage('materials',this)">📦 Materials</button>
-  <button type="button" class="nav-tab" onclick="goPage('equipment',this)">🛠 Equipment</button>
-  <button type="button" class="nav-tab" onclick="goPage('labour',this)">👷 Labour</button>
-  <button type="button" class="nav-tab" onclick="goPage('instructions',this)">📌 Instructions</button>
-  <button type="button" class="nav-tab" onclick="goPage('report',this)">📄 Report</button>
-  <button type="button" class="nav-tab" id="tab-projects" onclick="goPage('projects',this)">🏗 Projects</button>
-  <button type="button" class="nav-tab" id="tab-admin" style="display:none;" onclick="goPage('admin',this)">⚙ Users</button>
+  <button type="button" class="nav-tab active" aria-current="page" onclick="goPage('activities',this)"><span class="ico" data-ico="clipboard"></span> Activities</button>
+  <button type="button" class="nav-tab" onclick="goPage('daily',this)"><span class="ico" data-ico="calendar"></span> Daily Log</button>
+  <button type="button" class="nav-tab" onclick="goPage('expenses',this)"><span class="ico" data-ico="wallet"></span> Expenses</button>
+  <button type="button" class="nav-tab" onclick="goPage('materials',this)"><span class="ico" data-ico="package"></span> Materials</button>
+  <button type="button" class="nav-tab" onclick="goPage('equipment',this)"><span class="ico" data-ico="tool"></span> Equipment</button>
+  <button type="button" class="nav-tab" onclick="goPage('labour',this)"><span class="ico" data-ico="users"></span> Labour</button>
+  <button type="button" class="nav-tab" onclick="goPage('instructions',this)"><span class="ico" data-ico="pin"></span> Instructions</button>
+  <button type="button" class="nav-tab" onclick="goPage('report',this)"><span class="ico" data-ico="file"></span> Report</button>
+  <button type="button" class="nav-tab" id="tab-projects" onclick="goPage('projects',this)"><span class="ico" data-ico="building"></span> Projects</button>
+  <button type="button" class="nav-tab" id="tab-admin" style="display:none;" onclick="goPage('admin',this)"><span class="ico" data-ico="gear"></span> Users</button>
 </div>
 
 <!-- ══ CONTENT ══ -->
@@ -569,11 +598,8 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
     <!-- Activity List Header -->
     <div class="sec-hd">
       <h2 id="act-list-label">All Activities</h2>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <button class="btn btn-ghost btn-sm" onclick="filterActs('all')" id="af-all" style="border-color:var(--accent2);color:var(--accent2);">All</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterActs('notstarted')" id="af-notstarted">Not Started</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterActs('inprogress')" id="af-inprogress">In Progress</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterActs('done')" id="af-done">Completed</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-ghost btn-sm" id="btn-clear-filter" onclick="filterActs('all')" style="display:none;">✕ Clear filter</button>
         <button class="btn btn-amber btn-sm" id="btn-add-activity" onclick="openAddActivity()">+ Add Activity</button>
       </div>
     </div>
@@ -614,8 +640,8 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
     <div class="sec-hd">
       <h2>Site Report</h2>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>
-        <button class="btn btn-blue btn-sm" id="btn-word-report" style="display:none;" onclick="generateWordReport()">📄 Word Report</button>
+        <button class="btn btn-ghost btn-sm" onclick="window.print()"><span class="ico" data-ico="printer"></span> Print</button>
+        <button class="btn btn-blue btn-sm" id="btn-word-report" style="display:none;" onclick="generateWordReport()"><span class="ico" data-ico="file"></span> Word Report</button>
       </div>
     </div>
     <div id="report-content"></div>
@@ -658,7 +684,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       <button class="btn btn-amber btn-sm" id="btn-add-project" onclick="openAddProject()">+ New Project</button>
     </div>
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:4px;">📌 Pre-loaded Sites</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px;"><span class="ico" data-ico="pin"></span> Pre-loaded Sites</div>
       <div style="color:var(--muted);font-size:12px;">TE Ndeeba Mbawo · TE Kyengera SS · TE Kabuusu · RUBiS Mpigi-Nakirebe — switch between them using the tabs at the top of the screen.</div>
     </div>
     <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Custom Projects</div>
@@ -692,7 +718,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="fg"><label>Your Company</label><input type="text" id="np-company" placeholder="Your contracting company name"></div>
         <div class="fg"><label>Contract Start Date</label><input type="date" id="np-start"></div>
         <div class="fg"><label>Planned Completion</label><input type="date" id="np-end"></div>
-        <div class="fg"><label>Contract Sum (USHS)</label><input type="text" id="np-sum" placeholder="e.g. 120,000,000"></div>
+        <div class="fg"><label>Contract Sum (UGX)</label><input type="text" id="np-sum" placeholder="e.g. 120,000,000"></div>
         <div class="fg"><label>Site Foreman</label><input type="text" id="np-foreman" placeholder="Foreman name"></div>
       </div>
       <div class="fg"><label>Project Description / Scope</label><textarea id="np-desc" placeholder="Brief description of the works to be done..." style="min-height:65px;"></textarea></div>
@@ -744,9 +770,9 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         </div>
         <div class="fg"><label>Initial Status</label>
           <select id="na-status">
-            <option value="notstarted">⬜ Not Started</option>
-            <option value="inprogress">🔄 In Progress</option>
-            <option value="done">✅ Completed</option>
+            <option value="notstarted">Not Started</option>
+            <option value="inprogress">In Progress</option>
+            <option value="done">Completed</option>
           </select>
         </div>
       </div>
@@ -764,7 +790,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="scope-builder" id="na-scope-items"></div>
       </div>
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;margin-top:4px;">
-        💡 This activity will be added to the <strong id="na-site-label"></strong> activities list and saved to the database.
+        <span class="ico" data-ico="lightbulb"></span> This activity will be added to the <strong id="na-site-label"></strong> activities list and saved to the database.
       </div>
     </div>
     <div class="modal-ft">
@@ -787,10 +813,10 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="fg">
           <label>Status</label>
           <select id="a-status" onchange="onActStatusChange()">
-            <option value="notstarted">⬜ Not Started</option>
-            <option value="inprogress">🔄 In Progress</option>
-            <option value="done">✅ Completed</option>
-            <option value="onhold">🔴 On Hold</option>
+            <option value="notstarted">Not Started</option>
+            <option value="inprogress">In Progress</option>
+            <option value="done">Completed</option>
+            <option value="onhold">On Hold</option>
           </select>
         </div>
         <div class="fg">
@@ -815,7 +841,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <p class="scope-help">Tick completed parts below. The activity percentage and status update automatically.</p>
         <div class="scope-builder" id="a-scope-items"></div>
       </div>
-      <div class="fg"><label>✅ Completion Remarks</label><textarea id="a-completion" placeholder="How was it done? Variations, quality notes, who signed off..."></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="checkCircle"></span> Completion Remarks</label><textarea id="a-completion" placeholder="How was it done? Variations, quality notes, who signed off..."></textarea></div>
       <div class="fg"><label>⚠ Blockers / Issues</label><textarea id="a-blockers" style="min-height:55px;" placeholder="Anything delaying or affecting this work item..."></textarea></div>
     </div>
     <div class="modal-ft">
@@ -852,11 +878,11 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
           </select>
         </div>
       </div>
-      <div class="fg"><label>✅ Work Done Today</label><textarea id="l-workdone" placeholder="Describe all work carried out by your crew today..."></textarea></div>
-      <div class="fg"><label>📦 Materials Delivered / Used</label><textarea id="l-materials" placeholder="e.g. 5 bags cement, 2 tonnes sand..." style="min-height:55px;"></textarea></div>
-      <div class="fg"><label>🔴 Problems / Challenges</label><textarea id="l-problems" placeholder="Blockages, shortages, equipment failures..." style="min-height:55px;"></textarea></div>
-      <div class="fg"><label>📌 Instructions Received</label><textarea id="l-instructions" placeholder="Verbal or written instructions received today..." style="min-height:55px;"></textarea></div>
-      <div class="fg"><label>🏗 Plant & Equipment on Site</label><textarea id="l-plant" placeholder="e.g. concrete mixer, vibrator, compactor..." style="min-height:50px;"></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="checkCircle"></span> Work Done Today</label><textarea id="l-workdone" placeholder="Describe all work carried out by your crew today..."></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="package"></span> Materials Delivered / Used</label><textarea id="l-materials" placeholder="e.g. 5 bags cement, 2 tonnes sand..." style="min-height:55px;"></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="alert"></span> Problems / Challenges</label><textarea id="l-problems" placeholder="Blockages, shortages, equipment failures..." style="min-height:55px;"></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="pin"></span> Instructions Received</label><textarea id="l-instructions" placeholder="Verbal or written instructions received today..." style="min-height:55px;"></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="building"></span> Plant & Equipment on Site</label><textarea id="l-plant" placeholder="e.g. concrete mixer, vibrator, compactor..." style="min-height:50px;"></textarea></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
         <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Equipment Used Today</div>
         <button class="btn btn-ghost btn-sm" onclick="addEquipmentUseRow()">+ Row</button>
@@ -869,7 +895,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <span></span>
       </div>
       <div id="log-equipment-rows"></div>
-      <div class="fg"><label>📅 Plan for Tomorrow <button type="button" class="btn btn-ghost btn-sm" onclick="fillSuggestedTomorrow()" style="margin-left:8px;padding:3px 8px;">Suggest</button></label><textarea id="l-tomorrow" placeholder="Work planned for next day..." style="min-height:50px;"></textarea></div>
+      <div class="fg"><label><span class="ico" data-ico="calendar"></span> Plan for Tomorrow <button type="button" class="btn btn-ghost btn-sm" onclick="fillSuggestedTomorrow()" style="margin-left:8px;padding:3px 8px;">Suggest</button></label><textarea id="l-tomorrow" placeholder="Work planned for next day..." style="min-height:50px;"></textarea></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;">
         <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">Labour Attendance</div>
         <button class="btn btn-ghost btn-sm" onclick="addLabourRow()">+ Row</button>
@@ -885,7 +911,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 
       <!-- PHOTOS -->
       <div style="margin:14px 0 6px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);">📸 Site Photos</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);"><span class="ico" data-ico="camera"></span> Site Photos</div>
         <span style="font-size:11px;color:var(--muted);">Max 5 photos · Stored as thumbnails</span>
       </div>
       <div id="photo-preview-grid" class="photo-grid">
@@ -915,7 +941,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
             <option>Site Overheads</option><option>Subcontractor</option><option>Other</option>
           </select>
         </div>
-        <div class="fg"><label>Amount (USHS)</label><input type="number" id="ex-amount" placeholder="0" min="0"></div>
+        <div class="fg"><label>Amount (UGX)</label><input type="number" id="ex-amount" placeholder="0" min="0"></div>
       </div>
       <div class="fg"><label>Paid To / Supplier</label><input type="text" id="ex-supplier" placeholder="Name of person or company paid"></div>
       <div class="fg"><label>Receipt / Reference No.</label><input type="text" id="ex-receipt" placeholder="Receipt number (optional)"></div>
@@ -938,7 +964,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="fg"><label>Type</label><select id="mat-type"><option value="material">Material / Supply</option><option value="service">Service / Labour</option></select></div>
         <div class="fg"><label>Quantity</label><input type="text" id="mat-qty" placeholder="e.g. 50"></div>
         <div class="fg"><label>Unit</label><input type="text" id="mat-unit" placeholder="bags, m², Lm, No."></div>
-        <div class="fg"><label>Est. Cost (USHS)</label><input type="number" id="mat-cost" placeholder="0" min="0"></div>
+        <div class="fg"><label>Est. Cost (UGX)</label><input type="number" id="mat-cost" placeholder="0" min="0"></div>
       </div>
       <div class="fg"><label>Supplier / Subcontractor</label><input type="text" id="mat-supplier" placeholder="Supplier name"></div>
       <div class="fg2">
@@ -1012,10 +1038,10 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       <div class="fg2">
         <div class="fg"><label>Role</label>
           <select id="u-role">
-            <option value="foreman">🟡 Foreman</option>
-            <option value="engineer">🔵 Engineer</option>
-            <option value="superior">🔴 Superior</option>
-            <option value="client">⚪ Client / Owner</option>
+            <option value="foreman">Foreman</option>
+            <option value="engineer">Engineer</option>
+            <option value="superior">Superior</option>
+            <option value="client">Client / Owner</option>
           </select>
         </div>
         <div class="fg"><label>Assigned Site</label>
@@ -1030,15 +1056,32 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:12px;color:#166534;margin-top:4px;">
         <strong>Permissions:</strong><br>
-        🟡 <strong>Foreman</strong> — log daily entries, expenses &amp; materials (assigned site only)<br>
-        🔵 <strong>Engineer</strong> — all sites, update progress, approve/reject expenses<br>
-        🔴 <strong>Superior</strong> — full access, manage users, generate Word reports<br>
-        ⚪ <strong>Client</strong> — view-only dashboard and reports
+        <span class="role-dot" style="background:#f59e0b;"></span> <strong>Foreman</strong> — log daily entries, expenses &amp; materials (assigned site only)<br>
+        <span class="role-dot" style="background:#0ea5e9;"></span> <strong>Engineer</strong> — all sites, update progress, approve/reject expenses<br>
+        <span class="role-dot" style="background:#ef4444;"></span> <strong>Superior</strong> — full access, manage users, generate Word reports<br>
+        <span class="role-dot" style="background:#94a3b8;"></span> <strong>Client</strong> — view-only dashboard and reports
       </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-ghost" onclick="closeModal('modal-user')">Cancel</button>
       <button class="btn btn-sm" style="background:var(--purple);color:white;padding:7px 16px;" onclick="saveUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOASTS ══ -->
+<div class="toast-wrap" id="toast-wrap" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ══ CONFIRM DIALOG ══ -->
+<div class="overlay confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
+    <div class="confirm-body">
+      <div class="confirm-title" id="confirm-title"><span id="confirm-ico"><span class="ico" data-ico="trash"></span></span><span id="confirm-heading">Please confirm</span></div>
+      <div class="confirm-msg" id="confirm-msg">Are you sure?</div>
+    </div>
+    <div class="confirm-ft">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
     </div>
   </div>
 </div>
@@ -1123,7 +1166,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div class="fg"><label>Contract Start</label><input type="date" id="p-start"></div>
         <div class="fg"><label>Planned Completion</label><input type="date" id="p-end"></div>
       </div>
-      <div class="fg"><label>Contract Sum (USHS)</label><input type="text" id="p-sum" placeholder="e.g. 45,000,000"></div>
+      <div class="fg"><label>Contract Sum (UGX)</label><input type="text" id="p-sum" placeholder="e.g. 45,000,000"></div>
       <div class="fg"><label>Site Foreman</label><input type="text" id="p-foreman"></div>
     </div>
     <div class="modal-ft">
@@ -1315,6 +1358,55 @@ function jsArg(v) {
   return String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\x22').replace(/</g, '\\x3c').replace(/[\r\n\u2028\u2029]/g, ' ');
 }
 
+// ── Inline SVG icon system ──
+const ICONS = {
+  clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  wallet:'<path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>',
+  package:'<path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.27 6.96 8.73 5.05 8.73-5.05M12 22.08V12"/>',
+  tool:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  pin:'<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1Z"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+  building:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  checkCircle:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  alert:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/>',
+  lightbulb:'<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
+  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  mappin:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/>',
+  loader:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  printer:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>'
+};
+function svgIcon(name){
+  const p = ICONS[name]; if(!p) return '';
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+function hydrateOne(el){
+  const name = el.getAttribute('data-ico'); if(!name) return;
+  el.classList.add('ico'); if(name==='loader') el.classList.add('ico-spin');
+  el.innerHTML = svgIcon(name);
+  el.removeAttribute('data-ico');
+}
+function hydrateIcons(root){
+  const r = root || document;
+  if(r.nodeType===1 && r.matches && r.matches('[data-ico]')) hydrateOne(r);
+  if(r.querySelectorAll) r.querySelectorAll('[data-ico]').forEach(hydrateOne);
+}
+// Hydrate icons in any dynamically-inserted markup.
+new MutationObserver(muts=>{ for(const m of muts) for(const n of m.addedNodes) hydrateIcons(n); })
+  .observe(document.documentElement, { childList:true, subtree:true });
+hydrateIcons(document);
+
+
 async function refreshAuthToken() {
   if (!currentUser?.refreshToken) return false;
   const res = await fetch(`${FB_REFRESH}?key=${FB_API_KEY}`, {
@@ -1496,7 +1588,7 @@ let pendingPhotos = []; // [{dataUrl, name}] for current modal session
 function handlePhotoUpload(input) {
   const files = Array.from(input.files);
   files.forEach(file => {
-    if (pendingPhotos.length >= 5) { alert('Maximum 5 photos per log entry.'); return; }
+    if (pendingPhotos.length >= 5) { showToast('Maximum 5 photos per log entry.','error'); return; }
     const reader = new FileReader();
     reader.onload = e => {
       // Compress to max 600px wide
@@ -1547,17 +1639,17 @@ async function viewPhotoById(id) {
     const d = await fsGet('photos', id);
     setSyncStatus('live');
     if (d?.dataUrl) viewPhoto(d.dataUrl);
-    else alert('Photo not found.');
+    else showToast('Photo not found.','error');
   } catch(e) {
     setSyncStatus('error');
-    alert('Could not load photo. Check your connection.');
+    showToast('Could not load photo. Check your connection.','error');
   }
 }
 
 function renderLogPhotos(photos) {
   if (!photos||!photos.length) return '';
   return `<div class="log-field">
-    <div class="log-field-label">📸 Site Photos (${photos.length})</div>
+    <div class="log-field-label"><span class="ico" data-ico="camera"></span> Site Photos (${photos.length})</div>
     <div class="photo-grid" style="margin-top:6px;">
       ${photos.map(p=>`<img src="${escAttr(p.thumb||p.dataUrl)}" class="photo-thumb" onclick="${p.id?`viewPhotoById('${jsArg(p.id)}')`:`viewPhoto('${jsArg(p.dataUrl)}')`}" title="${escAttr(p.name||'Photo')}">`).join('')}
     </div>
@@ -1589,7 +1681,7 @@ async function saveExpense() {
     submittedBy: currentUser?.name||'',
     approvedBy: '', status: 'pending'
   };
-  if (!ex.desc) { alert('Enter a description.'); return; }
+  if (!ex.desc) { showToast('Please enter a description.','error'); return; }
   if (editExpenseId) { const i=state.expenses.findIndex(x=>x.id===editExpenseId); if(i>-1) state.expenses[i]=ex; }
   else state.expenses.unshift(ex);
   await saveSite(); closeModal('modal-expense'); renderExpenses();
@@ -1604,7 +1696,7 @@ async function rejectExpense(id) {
   ex.status='rejected'; await saveSite(); renderExpenses();
 }
 async function deleteExpense(id) {
-  if(!confirm('Delete this expense?'))return;
+  if(!await confirmAction('This expense will be permanently removed.',{title:'Delete expense?'}))return;
   state.expenses=state.expenses.filter(x=>x.id!==id); await saveSite(); renderExpenses();
 }
 function renderExpenses() {
@@ -1614,7 +1706,7 @@ function renderExpenses() {
   const approved = state.expenses.filter(e=>e.status==='approved').reduce((s,e)=>s+e.amount,0);
   const tb = document.getElementById('expense-totals');
   if (tb) tb.textContent = `Total: UGX ${total.toLocaleString()} · Approved: UGX ${approved.toLocaleString()}`;
-  if (!state.expenses.length) { wrap.innerHTML=`<div class="empty"><div class="empty-ico">💰</div><p>No expenses recorded yet.</p></div>`; return; }
+  if (!state.expenses.length) { wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="wallet"></span></div><p>No expenses recorded yet.</p></div>`; return; }
   const sc={pending:'b-amber',approved:'b-green',rejected:'b-red'};
   wrap.innerHTML=`<div class="expense-table-wrap"><table style="width:100%;border-collapse:collapse;font-size:13px;">
     <thead><tr style="background:var(--ink);color:#e5e7eb;">
@@ -1637,7 +1729,7 @@ function renderExpenses() {
       <td style="padding:9px 12px;"><span class="badge ${escAttr(sc[ex.status]||'b-gray')}">${esc(ex.status)}</span>${ex.approvedBy?`<div style="font-size:9px;color:var(--muted);">by ${esc(ex.approvedBy)}</div>`:''}</td>
       <td style="padding:9px 12px;"><div style="display:flex;gap:4px;flex-wrap:wrap;">
         ${canApprove()&&ex.status==='pending'?`<button class="btn btn-sm" style="background:var(--success);color:white;padding:4px 10px;" onclick="approveExpense('${jsArg(ex.id)}')">✓</button><button class="btn btn-danger btn-sm" style="padding:4px 10px;" onclick="rejectExpense('${jsArg(ex.id)}')">✕</button>`:''}
-        ${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="deleteExpense('${jsArg(ex.id)}')">🗑</button>`:''}
+        ${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="deleteExpense('${jsArg(ex.id)}')"><span class="ico" data-ico="trash"></span></button>`:''}
       </div></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -1688,13 +1780,13 @@ async function saveMaterial() {
     notes:document.getElementById('mat-notes').value,
     addedBy:currentUser?.name||''
   };
-  if (!m.name) { alert('Enter item name.'); return; }
+  if (!m.name) { showToast('Please enter an item name.','error'); return; }
   if (editMatId) { const i=state.materials.findIndex(x=>x.id===editMatId); if(i>-1)state.materials[i]=m; }
   else state.materials.unshift(m);
   await saveSite(); closeModal('modal-material'); renderMaterials();
 }
 async function deleteMaterial(id) {
-  if(!confirm('Remove this item?'))return;
+  if(!await confirmAction('This material/service item will be removed from the list.',{title:'Remove item?',confirmLabel:'Remove'}))return;
   state.materials=state.materials.filter(x=>x.id!==id); await saveSite(); renderMaterials();
 }
 async function updateMatStatus(id,val) {
@@ -1702,7 +1794,7 @@ async function updateMatStatus(id,val) {
 }
 function renderMaterials() {
   const wrap=document.getElementById('material-list'); if(!wrap)return;
-  if (!state.materials.length) { wrap.innerHTML=`<div class="empty"><div class="empty-ico">📦</div><p>No materials or services listed yet.</p></div>`; return; }
+  if (!state.materials.length) { wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="package"></span></div><p>No materials or services listed yet.</p></div>`; return; }
   const totalCost=state.materials.reduce((s,m)=>s+m.cost,0);
   const stCols={pending:'b-amber',ordered:'b-blue',delivered:'b-green',used:'b-gray'};
   wrap.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
@@ -1736,7 +1828,7 @@ function renderMaterials() {
         <option value="delivered"${m.status==='delivered'?' selected':''}>Delivered</option>
         <option value="used"${m.status==='used'?' selected':''}>Used</option>
       </select>`:`<span class="badge ${escAttr(stCols[m.status]||'b-gray')}">${esc(m.status)}</span>`}</td>
-      <td style="padding:9px 12px;"><div style="display:flex;gap:4px;">${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px;" onclick="openEditMaterial('${jsArg(m.id)}')">✎</button><button class="btn btn-danger btn-sm" style="padding:4px 8px;" onclick="deleteMaterial('${jsArg(m.id)}')">🗑</button>`:''}</div></td>
+      <td style="padding:9px 12px;"><div style="display:flex;gap:4px;">${canEdit()?`<button class="btn btn-ghost btn-sm" style="padding:4px 8px;" onclick="openEditMaterial('${jsArg(m.id)}')"><span class="ico" data-ico="pencil"></span></button><button class="btn btn-danger btn-sm" style="padding:4px 8px;" onclick="deleteMaterial('${jsArg(m.id)}')"><span class="ico" data-ico="trash"></span></button>`:''}</div></td>
     </tr>`).join('')}
     </tbody>
   </table></div>`;
@@ -1791,7 +1883,7 @@ async function saveEquipment(){
     updatedBy:currentUser?.name||'',
     updatedAt:new Date().toISOString()
   };
-  if(!eq.name){alert('Enter equipment or tool name.');return;}
+  if(!eq.name){showToast('Please enter an equipment or tool name.','error');return;}
   if(editEquipmentId){const i=state.equipment.findIndex(x=>x.id===editEquipmentId); if(i>-1)state.equipment[i]=eq;}
   else state.equipment.unshift(eq);
   await saveSite(); closeModal('modal-equipment'); renderEquipment();
@@ -1804,7 +1896,7 @@ async function updateEquipmentStatus(id,val){
 }
 
 async function deleteEquipment(id){
-  if(!confirm('Remove this equipment/tool?'))return;
+  if(!await confirmAction('This equipment/tool will be removed from the register.',{title:'Remove equipment?',confirmLabel:'Remove'}))return;
   state.equipment=state.equipment.filter(x=>x.id!==id);
   await saveSite(); renderEquipment();
 }
@@ -1813,7 +1905,7 @@ function renderEquipment(){
   const wrap=document.getElementById('equipment-list'); if(!wrap)return;
   const counts={available:0,inuse:0,repair:0,broken:0,offsite:0};
   (state.equipment||[]).forEach(e=>{counts[e.status]=(counts[e.status]||0)+1;});
-  if(!state.equipment.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">🛠</div><p>No equipment or tools registered yet.</p></div>`;return;}
+  if(!state.equipment.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="tool"></span></div><p>No equipment or tools registered yet.</p></div>`;return;}
   wrap.innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
     ${Object.keys(counts).map(s=>`<span class="badge ${equipmentBadge(s)}" style="padding:5px 12px;font-size:11px;">${equipmentStatusLabel(s)}: ${counts[s]}</span>`).join('')}
   </div>
@@ -1832,7 +1924,7 @@ function renderEquipment(){
         <option value="broken"${eq.status==='broken'?' selected':''}>Broken</option>
         <option value="offsite"${eq.status==='offsite'?' selected':''}>Off-site</option>
       </select>`:`<span class="badge ${equipmentBadge(eq.status)}">${equipmentStatusLabel(eq.status)}</span>`}</td>
-      <td>${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="openEditEquipment('${jsArg(eq.id)}')">✎</button> <button class="btn btn-danger btn-sm" onclick="deleteEquipment('${jsArg(eq.id)}')">✕</button>`:''}</td>
+      <td>${canEdit()?`<button class="btn btn-ghost btn-sm" onclick="openEditEquipment('${jsArg(eq.id)}')"><span class="ico" data-ico="pencil"></span></button> <button class="btn btn-danger btn-sm" onclick="deleteEquipment('${jsArg(eq.id)}')">✕</button>`:''}</td>
     </tr>`).join('')}</tbody>
   </table></div>`;
 }
@@ -1859,33 +1951,33 @@ async function fsUpdate(col, docId, data) {
 }
 
 function openAddUser() {
-  if (currentUser?.role !== 'superior') { alert('Only a superior can add users.'); return; }
+  if (currentUser?.role !== 'superior') { showToast('Only a superior can add users.','error'); return; }
   ['u-name','u-email','u-pass'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('u-role').value='foreman';
   document.getElementById('u-site').value='all';
   openModal('modal-user');
 }
 async function saveUser() {
-  if (currentUser?.role !== 'superior') { alert('Only a superior can add users.'); return; }
+  if (currentUser?.role !== 'superior') { showToast('Only a superior can add users.','error'); return; }
   const name=document.getElementById('u-name').value;
   const email=document.getElementById('u-email').value;
   const pass=document.getElementById('u-pass').value;
   const role=document.getElementById('u-role').value;
   const site=document.getElementById('u-site').value;
-  if(!name||!email||!pass){alert('Please fill all fields.');return;}
-  if(pass.length<6){alert('Password must be at least 6 characters.');return;}
+  if(!name||!email||!pass){showToast('Please fill in all fields.','error');return;}
+  if(pass.length<6){showToast('Password must be at least 6 characters.','error');return;}
   try {
     const r=await fetch(`${FB_AUTH}:signUp?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass,returnSecureToken:true})});
     const j=await r.json();
-    if(!r.ok){alert('Error: '+(j.error?.message||'Could not create account'));return;}
+    if(!r.ok){showToast(j.error?.message||'Could not create account','error');return;}
     await fsSet('users',j.localId,{name,email,role,site,status:'active',createdAt:new Date().toISOString(),source:'superior-ui'});
-    closeModal('modal-user'); renderAdmin(); alert(`✓ User "${name}" created successfully!`);
-  } catch(e){alert('Error: '+e.message);}
+    closeModal('modal-user'); renderAdmin(); showToast(`User “${name}” created successfully.`,'success');
+  } catch(e){showToast('Could not create user: '+e.message,'error');}
 }
 async function deleteUser(uid) {
-  if (currentUser?.role !== 'superior') { alert('Only a superior can remove users.'); return; }
-  if (uid === currentUser.uid) { alert('You cannot remove your own profile.'); return; }
-  if(!confirm('Remove this user profile? They will no longer be able to sign in. (To block them temporarily, set their status to Disabled instead.)'))return;
+  if (currentUser?.role !== 'superior') { showToast('Only a superior can remove users.','error'); return; }
+  if (uid === currentUser.uid) { showToast('You cannot remove your own profile.','error'); return; }
+  if(!await confirmAction('They will no longer be able to sign in. To block them temporarily instead, set their status to Disabled.',{title:'Remove user profile?',confirmLabel:'Remove'}))return;
   await fsDelete('users',uid); renderAdmin();
 }
 const ADMIN_ROLES=['foreman','engineer','superior','client'];
@@ -1893,7 +1985,7 @@ const ADMIN_STATUSES=['active','pending','disabled'];
 async function adminUpdateUser(uid, field, value) {
   if (currentUser?.role !== 'superior') return;
   try { await fsUpdate('users', uid, {[field]:value, updatedAt:new Date().toISOString()}); }
-  catch(e) { alert('Update failed. Check your connection and try again.'); }
+  catch(e) { showToast('Update failed. Check your connection and try again.','error'); }
   renderAdmin();
 }
 async function approveUser(uid, requestedRole) {
@@ -1901,15 +1993,15 @@ async function approveUser(uid, requestedRole) {
   const update = {status:'active', updatedAt:new Date().toISOString()};
   if (ADMIN_ROLES.includes(requestedRole)) update.role = requestedRole;
   try { await fsUpdate('users', uid, update); }
-  catch(e) { alert('Approval failed. Check your connection and try again.'); }
+  catch(e) { showToast('Approval failed. Check your connection and try again.','error'); }
   renderAdmin();
 }
 async function renderAdmin() {
   const wrap=document.getElementById('admin-user-list'); if(!wrap)return;
-  wrap.innerHTML='<div class="empty"><div class="empty-ico">⏳</div><p>Loading users…</p></div>';
+  wrap.innerHTML='<div class="empty"><div class="empty-ico"><span class="ico" data-ico="loader"></span></div><p>Loading users…</p></div>';
   try {
     const users=await fsList('users');
-    if(!users.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">👥</div><p>No users yet. Add one above.</p></div>`;return;}
+    if(!users.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="users"></span></div><p>No users yet. Add one above.</p></div>`;return;}
     // Pending signups first, then by name.
     users.sort((a,b)=>((a.status==='pending')?0:1)-((b.status==='pending')?0:1)||String(a.name||'').localeCompare(String(b.name||'')));
     const statusBadge={active:'b-green',pending:'b-amber',disabled:'b-red'};
@@ -1989,7 +2081,7 @@ async function generateWordReport() {
         ['Project',p.name||def.name],['Client',p.client||def.defaultProject?.client||'—'],
         ['Consulting Engineer',p.engineer||'—'],['Site Foreman',p.foreman||'—'],
         ['Contract Start',fmtDate(p.start)],['Planned Completion',fmtDate(p.end)],
-        ['Contract Sum',p.sum?'USHS '+p.sum:'—'],['Location',def.location]
+        ['Contract Sum',p.sum?'UGX '+p.sum:'—'],['Location',def.location]
       ].map(([k,v])=>new TableRow({children:[cell(k,true,'F3F4F6',2500),cell(v,false,'',6500)]}))}),
       new Paragraph({children:[],spacing:{after:200}}),
     ];
@@ -2062,8 +2154,8 @@ async function generateWordReport() {
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=def.name.replace(/\s+/g,'_')+'_Report_'+new Date().toISOString().slice(0,10)+'.docx';a.click();
     URL.revokeObjectURL(url);
-  } catch(e){ console.error(e); alert('Word report failed: '+e.message); }
-  finally{ btn.textContent='📄 Word Report'; btn.disabled=false; }
+  } catch(e){ console.error(e); showToast('Word report failed: '+e.message,'error'); }
+  finally{ btn.textContent='<span class="ico" data-ico="file"></span> Word Report'; btn.disabled=false; }
 }
 
 // ════════════════════════════════════════
@@ -2164,6 +2256,52 @@ async function switchSite(k) {
 function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function openModal(id){document.getElementById(id).classList.add('open');}
+
+// ── Toast notifications (replaces alert) ──
+function showToast(message, type='info', ms=3200){
+  const wrap=document.getElementById('toast-wrap'); if(!wrap) return;
+  const icons={success:'✓',error:'⚠',info:'ℹ'};
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.setAttribute('role', type==='error'?'alert':'status');
+  t.innerHTML=`<span class="toast-ico">${icons[type]||icons.info}</span><span>${esc(message)}</span>`;
+  wrap.appendChild(t);
+  const dismiss=()=>{ if(!t.parentNode) return; t.classList.add('leaving'); setTimeout(()=>t.remove(),200); };
+  t.addEventListener('click', dismiss);
+  setTimeout(dismiss, ms);
+}
+
+// ── Promise-based confirm dialog (replaces confirm) ──
+function confirmAction(message, {title='Please confirm', confirmLabel='Delete', danger=true, icon='<span class="ico" data-ico="trash"></span>'}={}){
+  return new Promise(resolve=>{
+    const ov=document.getElementById('confirm-overlay');
+    document.getElementById('confirm-heading').textContent=title;
+    document.getElementById('confirm-msg').textContent=message;
+    document.getElementById('confirm-ico').textContent=icon;
+    const okBtn=document.getElementById('confirm-ok');
+    const cancelBtn=document.getElementById('confirm-cancel');
+    okBtn.textContent=confirmLabel;
+    okBtn.className='btn '+(danger?'btn-danger':'btn-amber');
+    const close=(val)=>{
+      ov.classList.remove('open');
+      okBtn.removeEventListener('click',onOk);
+      cancelBtn.removeEventListener('click',onCancel);
+      ov.removeEventListener('click',onBackdrop);
+      document.removeEventListener('keydown',onKey);
+      resolve(val);
+    };
+    const onOk=()=>close(true);
+    const onCancel=()=>close(false);
+    const onBackdrop=e=>{ if(e.target===ov) close(false); };
+    const onKey=e=>{ if(e.key==='Escape') close(false); if(e.key==='Enter') close(true); };
+    okBtn.addEventListener('click',onOk);
+    cancelBtn.addEventListener('click',onCancel);
+    ov.addEventListener('click',onBackdrop);
+    document.addEventListener('keydown',onKey);
+    ov.classList.add('open');
+    okBtn.focus();
+  });
+}
 function statusLabel(s){return{notstarted:'Not Started',inprogress:'In Progress',done:'Completed',onhold:'On Hold'}[s]||s;}
 function statusColor(s){return{notstarted:'#9ca3af',inprogress:'#f59e0b',done:'#22c55e',onhold:'#ef4444'}[s]||'#9ca3af';}
 function avgPct(works){if(!works.length)return 0;return Math.round(works.reduce((s,w)=>s+w.pct,0)/works.length);}
@@ -2297,7 +2435,7 @@ function openEditProject(id) {
 
 async function saveProject_custom() {
   const name = document.getElementById('np-name').value.trim();
-  if (!name) { alert('Please enter a project name.'); return; }
+  if (!name) { showToast('Please enter a project name.','error'); return; }
   const project = {
     id: editProjectId || 'proj_' + Date.now(),
     name,
@@ -2342,7 +2480,7 @@ async function saveProject_custom() {
 }
 
 async function deleteProject(id) {
-  if (!confirm('Delete this project? This cannot be undone.')) return;
+  if (!await confirmAction('This project will be permanently deleted. This cannot be undone.',{title:'Delete project?'})) return;
   try { await fsDelete('projects', id); } catch(e) {}
   let projects = JSON.parse(localStorage.getItem('bt_custom_projects') || '[]');
   projects = projects.filter(x => x.id !== id);
@@ -2353,7 +2491,7 @@ async function deleteProject(id) {
 async function renderProjects() {
   const wrap = document.getElementById('projects-list');
   if (!wrap) return;
-  wrap.innerHTML = '<div class="empty"><div class="empty-ico">⏳</div><p>Loading projects…</p></div>';
+  wrap.innerHTML = '<div class="empty"><div class="empty-ico"><span class="ico" data-ico="loader"></span></div><p>Loading projects…</p></div>';
   // Load from Firestore
   let projects = [];
   try {
@@ -2365,7 +2503,7 @@ async function renderProjects() {
     projects = JSON.parse(localStorage.getItem('bt_custom_projects') || '[]');
   }
   if (!projects.length) {
-    wrap.innerHTML = `<div class="empty"><div class="empty-ico">🏗️</div><p>No custom projects yet.<br>Tap <strong>+ New Project</strong> to create one.</p></div>`;
+    wrap.innerHTML = `<div class="empty"><div class="empty-ico"><span class="ico" data-ico="building"></span></div><p>No custom projects yet.<br>Tap <strong>+ New Project</strong> to create one.</p></div>`;
     return;
   }
   wrap.innerHTML = projects.map(p => {
@@ -2376,21 +2514,21 @@ async function renderProjects() {
         <div style="flex:1;min-width:200px;">
           <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:4px;">${esc(p.name)}</div>
           <div style="font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
-            ${p.client ? `<span>👤 ${esc(p.client)}</span>` : ''}
-            ${p.location ? `<span>📍 ${esc(p.location)}</span>` : ''}
-            ${p.engineer ? `<span>🔵 ${esc(p.engineer)}</span>` : ''}
-            ${p.foreman ? `<span>🟡 ${esc(p.foreman)}</span>` : ''}
+            ${p.client ? `<span><span class="ico" data-ico="user"></span> ${esc(p.client)}</span>` : ''}
+            ${p.location ? `<span><span class="ico" data-ico="mappin"></span> ${esc(p.location)}</span>` : ''}
+            ${p.engineer ? `<span><span class="role-dot" style="background:#0ea5e9;"></span> ${esc(p.engineer)}</span>` : ''}
+            ${p.foreman ? `<span><span class="role-dot" style="background:#f59e0b;"></span> ${esc(p.foreman)}</span>` : ''}
           </div>
           ${p.desc ? `<div style="font-size:12px;color:#555;margin-bottom:8px;">${esc(p.desc)}</div>` : ''}
           <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-            ${p.start ? `<span style="font-size:11px;color:var(--muted);">📅 ${fmtDate(p.start)} → ${fmtDate(p.end)}</span>` : ''}
-            ${p.sum ? `<span class="badge b-blue" style="font-size:10px;">USHS ${esc(p.sum)}</span>` : ''}
+            ${p.start ? `<span style="font-size:11px;color:var(--muted);"><span class="ico" data-ico="calendar"></span> ${fmtDate(p.start)} → ${fmtDate(p.end)}</span>` : ''}
+            ${p.sum ? `<span class="badge b-blue" style="font-size:10px;">UGX ${esc(p.sum)}</span>` : ''}
             ${daysLabel}
           </div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="btn btn-ghost btn-sm" onclick="openEditProject('${jsArg(p.id)}')">✎ Edit</button>
-          ${currentUser?.role==='superior' ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${jsArg(p.id)}')">🗑</button>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="openEditProject('${jsArg(p.id)}')"><span class="ico" data-ico="pencil"></span> Edit</button>
+          ${currentUser?.role==='superior' ? `<button class="btn btn-danger btn-sm" onclick="deleteProject('${jsArg(p.id)}')"><span class="ico" data-ico="trash"></span></button>` : ''}
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);">
@@ -2482,7 +2620,7 @@ function openAddActivity() {
 
 async function saveNewActivity() {
   const name = document.getElementById('na-name').value.trim();
-  if (!name) { alert('Please enter an activity name.'); return; }
+  if (!name) { showToast('Please enter an activity name.','error'); return; }
   const scopeItems=getScopeRows('na-scope-items');
   const status = document.getElementById('na-status').value;
   const pct = status === 'done' ? 100 : parseInt(document.getElementById('na-pct').value) || 0;
@@ -2512,15 +2650,9 @@ async function saveNewActivity() {
 
 function filterActs(f){
   activeFilter = f;
-  // update filter buttons
-  ['all','notstarted','inprogress','done'].forEach(id=>{
-    const el = document.getElementById('af-'+id);
-    if(!el)return;
-    const isActive = id===f;
-    el.style.borderColor = isActive?'var(--accent2)':'var(--border)';
-    el.style.color = isActive?'var(--accent2)':'';
-    el.style.background = isActive?'#eff6ff':'';
-  });
+  // The stat cards are the filter control; show a Clear button when a filter is active.
+  const clr = document.getElementById('btn-clear-filter');
+  if(clr) clr.style.display = f==='all' ? 'none' : '';
   renderStats();
   renderActivityList();
 }
@@ -2550,7 +2682,7 @@ function renderActivityList(){
   document.getElementById('act-list-label').textContent = `${label} (${works.length})`;
 
   if(!works.length){
-    wrap.innerHTML=`<div class="empty"><div class="empty-ico">${activeFilter==='done'?'✅':'🔧'}</div><p>${activeFilter==='done'?'No completed items yet.':'No items in this category.'}</p></div>`;
+    wrap.innerHTML=`<div class="empty"><div class="empty-ico">${activeFilter==='done'?'<span class="ico" data-ico="checkCircle"></span>':'<span class="ico" data-ico="tool"></span>'}</div><p>${activeFilter==='done'?'No completed items yet.':'No items in this category.'}</p></div>`;
     return;
   }
 
@@ -2597,7 +2729,7 @@ function renderActivityList(){
 	        ${st==='inprogress'&&!(w.scopeItems||[]).length?`<input type="range" min="0" max="100" value="${escAttr(w.pct)}" oninput="quickPctPreview('${jsArg(w.id)}',this.value)" onchange="quickPctChange('${jsArg(w.id)}',this.value)" style="width:100%;margin-top:5px;accent-color:#f59e0b;">`:''}
       </div>
       <div class="act-btn-col">
-	        ${canEdit()?`<button class="act-edit-btn" onclick="openEditAct('${jsArg(w.id)}')" title="Update ${escAttr(w.name)}" aria-label="Update ${escAttr(w.name)}">✎</button>`:''}
+	        ${canEdit()?`<button class="act-edit-btn" onclick="openEditAct('${jsArg(w.id)}')" title="Update ${escAttr(w.name)}" aria-label="Update ${escAttr(w.name)}"><span class="ico" data-ico="pencil"></span></button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -2778,7 +2910,7 @@ async function saveLog(){
     photos:[],
     submittedBy:currentUser?.name||''
   };
-  if(!log.date){alert('Set a date.');return;}
+  if(!log.date){showToast('Please set a date.','error');return;}
   // Store each full-size photo as its own photos/{id} document so the site
   // document never hits Firestore's 1MB limit; the log keeps {id, thumb, name}.
   for (const p of pendingPhotos) {
@@ -2802,7 +2934,7 @@ async function saveLog(){
   await saveSite();closeModal('modal-log');renderDaily();
 }
 async function deleteLog(id){
-  if(!confirm('Delete this log?'))return;
+  if(!await confirmAction('This daily log and its photos will be permanently deleted.',{title:'Delete log?'}))return;
   const l=state.logs.find(x=>x.id===id);
   (l?.photos||[]).forEach(p=>{if(p.id)fsDelete('photos',p.id).catch(()=>{});});
   state.logs=state.logs.filter(x=>x.id!==id);await saveSite();renderDaily();
@@ -2837,7 +2969,7 @@ function editLog(id){
 }
 function renderDaily(){
   const wrap=document.getElementById('daily-list');
-  if(!state.logs.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><p>No daily logs yet.</p></div>`;return;}
+  if(!state.logs.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="clipboard"></span></div><p>No daily logs yet.</p></div>`;return;}
   const sbMap={ok:'b-green',warn:'b-amber',issue:'b-red',pending:'b-gray'};
   const stMap={ok:'On Schedule',warn:'Slight Delay',issue:'Delayed',pending:'Awaiting'};
   wrap.innerHTML=state.logs.map((l,i)=>{
@@ -2856,17 +2988,17 @@ function renderDaily(){
         </div>
       </div>
       <div class="log-body" id="lb-${escAttr(l.id)}">
-        ${l.workdone?`<div class="log-field"><div class="log-field-label green">✅ Work Done Today</div><div class="log-text">${esc(l.workdone)}</div></div>`:''}
-        ${l.materials?`<div class="log-field"><div class="log-field-label blue">📦 Materials</div><div class="log-text">${esc(l.materials)}</div></div>`:''}
-        ${l.plant?`<div class="log-field"><div class="log-field-label">🏗 Plant & Equipment</div><div class="log-text">${esc(l.plant)}</div></div>`:''}
-        ${l.equipmentUsed&&l.equipmentUsed.length?`<div class="log-field"><div class="log-field-label">🛠 Equipment Used</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.equipmentUsed.map(r=>`<span class="badge b-blue">${esc(r.name)}${r.hours?' · '+esc(r.hours)+'h':''}${r.operator?' · '+esc(r.operator):''}${r.notes?' · '+esc(r.notes):''}</span>`).join('')}</div></div>`:''}
-        ${l.problems?`<div class="log-field"><div class="log-field-label red">🔴 Problems</div><div class="log-text" style="color:#dc2626;">${esc(l.problems)}</div></div>`:''}
-        ${l.instructions?`<div class="log-field"><div class="log-field-label amber">📌 Instructions Received</div><div class="log-text">${esc(l.instructions)}</div></div>`:''}
-        ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue">📅 Tomorrow</div><div class="log-text">${esc(l.tomorrow)}</div></div>`:''}
-        ${l.labour&&l.labour.length?`<div class="log-field"><div class="log-field-label">👷 Labour (${wkrs} workers)</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.labour.map(r=>`<span class="badge b-gray">${esc(r.trade)} ×${esc(r.count)}${r.name?' ('+esc(r.name)+')':''}</span>`).join('')}</div></div>`:''}
+        ${l.workdone?`<div class="log-field"><div class="log-field-label green"><span class="ico" data-ico="checkCircle"></span> Work Done Today</div><div class="log-text">${esc(l.workdone)}</div></div>`:''}
+        ${l.materials?`<div class="log-field"><div class="log-field-label blue"><span class="ico" data-ico="package"></span> Materials</div><div class="log-text">${esc(l.materials)}</div></div>`:''}
+        ${l.plant?`<div class="log-field"><div class="log-field-label"><span class="ico" data-ico="building"></span> Plant & Equipment</div><div class="log-text">${esc(l.plant)}</div></div>`:''}
+        ${l.equipmentUsed&&l.equipmentUsed.length?`<div class="log-field"><div class="log-field-label"><span class="ico" data-ico="tool"></span> Equipment Used</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.equipmentUsed.map(r=>`<span class="badge b-blue">${esc(r.name)}${r.hours?' · '+esc(r.hours)+'h':''}${r.operator?' · '+esc(r.operator):''}${r.notes?' · '+esc(r.notes):''}</span>`).join('')}</div></div>`:''}
+        ${l.problems?`<div class="log-field"><div class="log-field-label red"><span class="ico" data-ico="alert"></span> Problems</div><div class="log-text" style="color:#dc2626;">${esc(l.problems)}</div></div>`:''}
+        ${l.instructions?`<div class="log-field"><div class="log-field-label amber"><span class="ico" data-ico="pin"></span> Instructions Received</div><div class="log-text">${esc(l.instructions)}</div></div>`:''}
+        ${l.tomorrow?`<div class="log-field"><div class="log-field-label blue"><span class="ico" data-ico="calendar"></span> Tomorrow</div><div class="log-text">${esc(l.tomorrow)}</div></div>`:''}
+        ${l.labour&&l.labour.length?`<div class="log-field"><div class="log-field-label"><span class="ico" data-ico="users"></span> Labour (${wkrs} workers)</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;">${l.labour.map(r=>`<span class="badge b-gray">${esc(r.trade)} ×${esc(r.count)}${r.name?' ('+esc(r.name)+')':''}</span>`).join('')}</div></div>`:''}
         ${renderLogPhotos(l.photos)}
         ${canEdit()?`<div style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
-          <button class="btn btn-ghost btn-sm" onclick="editLog('${jsArg(l.id)}')">✎ Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="editLog('${jsArg(l.id)}')"><span class="ico" data-ico="pencil"></span> Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteLog('${jsArg(l.id)}')">✕ Delete</button>
         </div>`:''}
       </div>
@@ -2880,18 +3012,18 @@ function renderDaily(){
 function openAddLabour(){['lb-name','lb-phone','lb-notes'].forEach(id=>document.getElementById(id).value='');openModal('modal-labour');}
 async function saveLabour(){
   const lb={id:Date.now().toString(),name:document.getElementById('lb-name').value,trade:document.getElementById('lb-trade').value,phone:document.getElementById('lb-phone').value,type:document.getElementById('lb-type').value,notes:document.getElementById('lb-notes').value};
-  if(!lb.name){alert('Enter worker name.');return;}
+  if(!lb.name){showToast('Please enter a worker name.','error');return;}
   state.labour.push(lb);await saveSite();closeModal('modal-labour');renderLabour();
 }
-async function deleteLabour(id){if(!confirm('Remove?'))return;state.labour=state.labour.filter(l=>l.id!==id);await saveSite();renderLabour();}
+async function deleteLabour(id){if(!await confirmAction('This worker will be removed from the register.',{title:'Remove worker?',confirmLabel:'Remove'}))return;state.labour=state.labour.filter(l=>l.id!==id);await saveSite();renderLabour();}
 function renderLabour(){
   const wrap=document.getElementById('labour-wrap');
-  if(!state.labour.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">👷</div><p>No workers registered.</p></div>`;return;}
+  if(!state.labour.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="users"></span></div><p>No workers registered.</p></div>`;return;}
   const types=[...new Set(state.labour.map(l=>l.type))];
   wrap.innerHTML=types.map(type=>{
     const ws=state.labour.filter(l=>l.type===type);
     return`<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
-      <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:700;font-size:13px;">👷 ${esc(type)} (${ws.length})</div>
+      <div style="padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-weight:700;font-size:13px;"><span class="ico" data-ico="users"></span> ${esc(type)} (${ws.length})</div>
       <table class="t">
         <thead><tr><th>Name</th><th>Trade</th><th>Phone</th><th>Notes</th><th></th></tr></thead>
         <tbody>${ws.map(w=>`<tr>
@@ -2912,14 +3044,14 @@ function renderLabour(){
 function openAddInstruction(){document.getElementById('i-date').value=new Date().toISOString().slice(0,10);['i-from','i-desc','i-action'].forEach(id=>document.getElementById(id).value='');document.getElementById('i-status').value='open';openModal('modal-instr');}
 async function saveInstruction(){
   const ins={id:Date.now().toString(),date:document.getElementById('i-date').value,from:document.getElementById('i-from').value,type:document.getElementById('i-type').value,desc:document.getElementById('i-desc').value,action:document.getElementById('i-action').value,status:document.getElementById('i-status').value};
-  if(!ins.desc){alert('Enter description.');return;}
+  if(!ins.desc){showToast('Please enter a description.','error');return;}
   state.instructions.unshift(ins);await saveSite();closeModal('modal-instr');renderInstructions();
 }
-async function deleteInstr(id){if(!confirm('Delete?'))return;state.instructions=state.instructions.filter(i=>i.id!==id);await saveSite();renderInstructions();}
+async function deleteInstr(id){if(!await confirmAction('This instruction record will be permanently deleted.',{title:'Delete instruction?'}))return;state.instructions=state.instructions.filter(i=>i.id!==id);await saveSite();renderInstructions();}
 async function updateInstrStatus(id,val){const i=state.instructions.find(x=>x.id===id);if(i){i.status=val;await saveSite();renderInstructions();}}
 function renderInstructions(){
   const wrap=document.getElementById('instr-list');
-  if(!state.instructions.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico">📌</div><p>No instructions logged yet.</p></div>`;return;}
+  if(!state.instructions.length){wrap.innerHTML=`<div class="empty"><div class="empty-ico"><span class="ico" data-ico="pin"></span></div><p>No instructions logged yet.</p></div>`;return;}
   const ibm={open:'b-red',progress:'b-amber',done:'b-green'};
   const ibt={open:'Open',progress:'In Progress',done:'Done'};
   wrap.innerHTML=state.instructions.map(ins=>`
@@ -2989,7 +3121,7 @@ function renderReport(){
       <div><strong>Foreman:</strong>${esc(p.foreman||'—')}</div>
       <div><strong>Contract Start:</strong>${fmtDate(p.start)}</div>
       <div><strong>Planned Completion:</strong>${fmtDate(p.end)}</div>
-      <div><strong>Contract Sum:</strong>${p.sum?'USHS '+esc(p.sum):'—'}</div>
+      <div><strong>Contract Sum:</strong>${p.sum?'UGX '+esc(p.sum):'—'}</div>
       <div><strong>Location:</strong>${esc(def.location)}</div>
     </div>
     ${w.length?`<div class="rep-h3">WORKS PROGRESS (${done} of ${w.length} completed)</div>
