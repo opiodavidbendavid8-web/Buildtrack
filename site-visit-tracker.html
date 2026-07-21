@@ -2080,7 +2080,7 @@ async function generateWordReport() {
     const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
     const bdr={style:BorderStyle.SINGLE,size:1,color:'DDDDDD'};
     const bdrs={top:bdr,bottom:bdr,left:bdr,right:bdr};
-    const cell=(txt,bold=false,bg='',w=2250)=>new TableCell({borders:bdrs,width:{size:w,type:WidthType.DXA},shading:bg?{fill:bg,type:ShadingType.CLEAR}:{},margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:String(txt||'—'),bold,font:'Arial',size:20})]})]});
+    const cell=(txt,bold=false,bg='',w=2250,color='')=>new TableCell({borders:bdrs,width:{size:w,type:WidthType.DXA},shading:bg?{fill:bg,type:ShadingType.CLEAR}:{},margins:{top:80,bottom:80,left:120,right:120},children:[new Paragraph({children:[new TextRun({text:String(txt||'—'),bold,color:color||undefined,font:'Arial',size:20})]})]});
     const hdr=txt=>new Paragraph({heading:HeadingLevel.HEADING_2,spacing:{before:280,after:80},children:[new TextRun({text:txt,bold:true,color:'1D4ED8',font:'Arial',size:24})]});
     const par=(txt,bold=false,col='')=>new Paragraph({spacing:{after:60},children:[new TextRun({text:String(txt||''),bold,color:col||undefined,font:'Arial',size:20})]});
 
@@ -2103,7 +2103,7 @@ async function generateWordReport() {
     if(state.works.length){
       children.push(hdr('WORKS PROGRESS ('+state.works.filter(w=>w.status==='done'||w.pct===100).length+' of '+state.works.length+' completed)'));
       children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[4200,1600,1600,1600],rows:[
-        new TableRow({children:[cell('Activity',true,'1E3A5F',4200),cell('Category',true,'1E3A5F',1600),cell('Status',true,'1E3A5F',1600),cell('% Done',true,'1E3A5F',1600)].map(c=>{c.children[0].children[0].children[0]=new TextRun({text:c.children[0].children[0].children[0].text,bold:true,color:'FFFFFF',font:'Arial',size:20});return c;})}),
+        new TableRow({children:[cell('Activity',true,'1E3A5F',4200,'FFFFFF'),cell('Category',true,'1E3A5F',1600,'FFFFFF'),cell('Status',true,'1E3A5F',1600,'FFFFFF'),cell('% Done',true,'1E3A5F',1600,'FFFFFF')]}),
         ...state.works.map(w=>{const st=w.status||(w.pct===100?'done':w.pct===0?'notstarted':'inprogress');return new TableRow({children:[cell(w.name,true,'',4200),cell(w.cat,false,'',1600),cell(statusLabel(st),false,'',1600),cell(w.pct+'%',w.pct===100,'',1600)]});})
       ]}));
       children.push(new Paragraph({children:[],spacing:{after:200}}));
