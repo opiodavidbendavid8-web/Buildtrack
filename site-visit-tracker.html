@@ -219,6 +219,14 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .modal-close:hover{background:var(--border);color:var(--ink);}
 .modal-body{padding:20px;}
 .modal-ft{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--card);}
+.report-builder-modal{max-width:760px;}
+.report-builder-intro{background:#f8fafc;border:1px solid var(--border);border-left:4px solid var(--accent2);border-radius:10px;padding:12px 14px;margin-bottom:16px;color:var(--muted);font-size:12px;line-height:1.55;}
+.report-builder-section{border-top:1px solid var(--border);padding-top:16px;margin-top:16px;}
+.report-builder-section h4{font-family:'Syne',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink2);margin:0 0 12px;}
+.report-builder-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.report-builder-summary div{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 12px;}
+.report-builder-summary strong{display:block;font-family:'Syne',sans-serif;font-size:18px;color:var(--ink);}
+.report-builder-summary span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
 
 /* REPORT */
 .report-wrap{background:white;border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;max-width:820px;box-shadow:var(--shadow-sm);}
@@ -436,6 +444,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
   .login-box{margin:auto 0;padding:26px 20px;max-height:none;overflow:visible;}
   .modal-body{padding:14px;}
   .modal-ft{padding:12px 14px;}
+  .report-builder-summary{grid-template-columns:1fr;}
 }
 
 /* Very small — 360px */
@@ -646,7 +655,7 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
       <h2>Site Report</h2>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost btn-sm" onclick="window.print()"><span class="ico" data-ico="printer"></span> Print</button>
-        <button class="btn btn-blue btn-sm" id="btn-word-report" style="display:none;" onclick="generateWordReport()"><span class="ico" data-ico="file"></span> Word Report</button>
+        <button class="btn btn-blue btn-sm" id="btn-word-report" style="display:none;" onclick="openReportBuilder()"><span class="ico" data-ico="file"></span> Build Word Report</button>
       </div>
     </div>
     <div id="report-content"></div>
@@ -709,6 +718,41 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
     <div id="admin-user-list"></div>
   </div>
 
+</div>
+
+<!-- ══ MODAL: Word Report Builder ══ -->
+<div class="overlay" id="modal-report-builder">
+  <div class="modal report-builder-modal">
+    <div class="modal-hd">
+      <h3>Build Word Progress Report</h3>
+      <button class="modal-close" onclick="closeModal('modal-report-builder')" aria-label="Close report builder">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="report-builder-intro">Review the report details below. BuildTrack will automatically group site activities and include the latest project records in the downloaded Word document.</div>
+      <div class="report-builder-summary">
+        <div><strong id="rb-completed-count">0</strong><span>Completed</span></div>
+        <div><strong id="rb-ongoing-count">0</strong><span>Ongoing</span></div>
+        <div><strong id="rb-upcoming-count">0</strong><span>Not Started</span></div>
+      </div>
+      <div class="fg"><label>Report Subject</label><input type="text" id="rb-subject" placeholder="Weekly Progress Report"></div>
+      <div class="fg2">
+        <div class="fg"><label>Period Start</label><input type="date" id="rb-period-start"></div>
+        <div class="fg"><label>Period End</label><input type="date" id="rb-period-end"></div>
+        <div class="fg"><label>Prepared By</label><input type="text" id="rb-prepared-by"></div>
+        <div class="fg"><label>Job Title</label><input type="text" id="rb-prepared-title" placeholder="Project Manager / Site Foreman"></div>
+      </div>
+      <div class="report-builder-section">
+        <h4>Management Narrative</h4>
+        <div class="fg"><label>Observations <span style="font-weight:400;color:var(--muted);">(one item per line)</span></label><textarea id="rb-observations" placeholder="Site conditions, quality observations, approvals received..."></textarea></div>
+        <div class="fg"><label>Risks / Constraints <span style="font-weight:400;color:var(--muted);">(one item per line)</span></label><textarea id="rb-risks" placeholder="Material delays, access constraints, weather risks..."></textarea></div>
+        <div class="fg"><label>Conclusion</label><textarea id="rb-conclusion" placeholder="Summarise performance and the priorities for the next reporting period."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeModal('modal-report-builder')">Cancel</button>
+      <button class="btn btn-blue" id="btn-generate-report" onclick="generateWordReport()"><span class="ico" data-ico="file"></span> Generate Word Report</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ MODAL: Add / Edit Project ══ -->
@@ -1186,6 +1230,8 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
 </div>
 
 <script>
+const REPORT_COMPANY_NAME = 'HIGSTAN TECHNICAL SERVICES LIMITED';
+
 // ════════════════════════════════════════
 // SITE DEFINITIONS
 // ════════════════════════════════════════
@@ -2069,9 +2115,43 @@ async function renderAdmin() {
 // ════════════════════════════════════════
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)){res();return;}const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 
+function openReportBuilder(){
+  const works=state.works||[];
+  const completed=works.filter(w=>w.status==='done'||Number(w.pct)===100).length;
+  const upcoming=works.filter(w=>w.status==='notstarted'||Number(w.pct)===0).length;
+  document.getElementById('rb-completed-count').textContent=completed;
+  document.getElementById('rb-ongoing-count').textContent=Math.max(0,works.length-completed-upcoming);
+  document.getElementById('rb-upcoming-count').textContent=upcoming;
+  const end=new Date();
+  const start=new Date(end); start.setDate(start.getDate()-6);
+  const iso=d=>d.toISOString().slice(0,10);
+  let draft={};
+  try{draft=JSON.parse(localStorage.getItem('bt_report_draft_'+activeSite)||'{}');}catch(e){}
+  const def=SITE_DEFS[activeSite];
+  document.getElementById('rb-subject').value=draft.subject||`Progress Report — ${def.name}`;
+  document.getElementById('rb-period-start').value=draft.periodStart||iso(start);
+  document.getElementById('rb-period-end').value=draft.periodEnd||iso(end);
+  document.getElementById('rb-prepared-by').value=draft.preparedBy||currentUser?.name||'';
+  document.getElementById('rb-prepared-title').value=draft.preparedTitle||'';
+  document.getElementById('rb-observations').value=draft.observations||'';
+  document.getElementById('rb-risks').value=draft.risks||'';
+  document.getElementById('rb-conclusion').value=draft.conclusion||'';
+  openModal('modal-report-builder');
+}
+
+function getReportBuilderData(){
+  const value=id=>document.getElementById(id)?.value.trim()||'';
+  const data={subject:value('rb-subject'),periodStart:value('rb-period-start'),periodEnd:value('rb-period-end'),preparedBy:value('rb-prepared-by'),preparedTitle:value('rb-prepared-title'),observations:value('rb-observations'),risks:value('rb-risks'),conclusion:value('rb-conclusion')};
+  localStorage.setItem('bt_report_draft_'+activeSite,JSON.stringify(data));
+  return {...data,observationItems:data.observations.split(/\n+/).map(x=>x.trim()).filter(Boolean),riskItems:data.risks.split(/\n+/).map(x=>x.trim()).filter(Boolean)};
+}
+
 async function generateWordReport() {
   const btn = document.getElementById('btn-word-report');
+  const modalBtn=document.getElementById('btn-generate-report');
+  const reportDetails=getReportBuilderData();
   btn.textContent='⏳ Generating…'; btn.disabled=true;
+  if(modalBtn){modalBtn.textContent='⏳ Generating…';modalBtn.disabled=true;}
   try {
     await loadScript('https://unpkg.com/docx@8.5.0/build/index.umd.js');
     if(!window.docx) throw new Error('The Word report library could not be loaded. Check your connection and try again.');
@@ -2085,9 +2165,10 @@ async function generateWordReport() {
     const par=(txt,bold=false,col='')=>new Paragraph({spacing:{after:60},children:[new TextRun({text:String(txt||''),bold,color:col||undefined,font:'Arial',size:20})]});
 
     const children=[
-      new Paragraph({heading:HeadingLevel.HEADING_1,children:[new TextRun({text:p.company||'BuildTrack',bold:true,font:'Arial',size:40,color:'F59E0B'})]}),
-      par('Contractor\'s Site Progress Report — '+def.name,true),
-      par('Generated: '+today+'   |   Overall Progress: '+avgPct(state.works)+'%'),
+      new Paragraph({heading:HeadingLevel.HEADING_1,children:[new TextRun({text:REPORT_COMPANY_NAME,bold:true,font:'Arial',size:40,color:'F59E0B'})]}),
+      par(reportDetails.subject||('Contractor\'s Site Progress Report — '+def.name),true),
+      par('Site: '+def.name+'   |   Report date: '+today),
+      par('Reporting period: '+fmtDate(reportDetails.periodStart)+' – '+fmtDate(reportDetails.periodEnd)+'   |   Overall Progress: '+avgPct(state.works)+'%'),
       new Paragraph({children:[],spacing:{after:200}}),
       hdr('CONTRACT DETAILS'),
       new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[2500,6500],rows:[
@@ -2158,17 +2239,40 @@ async function generateWordReport() {
       });
     }
 
+    const upcomingWorks=state.works.filter(w=>w.status==='notstarted'||Number(w.pct)===0);
+    if(upcomingWorks.length){
+      children.push(hdr('WORK TO BE COMPLETED NEXT'));
+      upcomingWorks.forEach((w,i)=>children.push(par(`${i+1}. ${w.name}${w.notes?' — '+w.notes:''}`)));
+    }
+    if(reportDetails.observationItems.length){
+      children.push(hdr('OBSERVATIONS'));
+      reportDetails.observationItems.forEach((item,i)=>children.push(par(`${i+1}. ${item}`)));
+    }
+    if(reportDetails.riskItems.length){
+      children.push(hdr('RISKS / CONSTRAINTS'));
+      reportDetails.riskItems.forEach((item,i)=>children.push(par(`${i+1}. ${item}`,false,'C00000')));
+    }
+    if(reportDetails.conclusion){children.push(hdr('CONCLUSION'));children.push(par(reportDetails.conclusion));}
+
     // Signature
     children.push(new Paragraph({children:[],spacing:{after:400}}));
-    children.push(par('Prepared by: '+(p.foreman||currentUser?.name||'_____________________')+'     Signature: _____________________     Date: '+today));
+    children.push(par('Prepared by: '+(reportDetails.preparedBy||p.foreman||currentUser?.name||'_____________________'),true));
+    if(reportDetails.preparedTitle) children.push(par(reportDetails.preparedTitle));
+    children.push(par(REPORT_COMPANY_NAME));
+    children.push(par('Signature: _____________________     Date: '+today));
 
     const doc=new Document({styles:{default:{document:{run:{font:'Arial',size:22}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1000,right:1000,bottom:1000,left:1000}}},children}]});
     const blob=await Packer.toBlob(doc);
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=def.name.replace(/\s+/g,'_')+'_Report_'+new Date().toISOString().slice(0,10)+'.docx';a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    closeModal('modal-report-builder');
+    showToast('Word progress report generated successfully.','success');
   } catch(e){ console.error(e); showToast('Word report failed: '+e.message,'error'); }
-  finally{ btn.innerHTML='<span class="ico" data-ico="file"></span> Word Report'; btn.disabled=false; }
+  finally{
+    btn.innerHTML='<span class="ico" data-ico="file"></span> Build Word Report'; btn.disabled=false;
+    if(modalBtn){modalBtn.innerHTML='<span class="ico" data-ico="file"></span> Generate Word Report';modalBtn.disabled=false;}
+  }
 }
 
 // ════════════════════════════════════════
@@ -3207,7 +3311,7 @@ function renderReport(){
   wrap.innerHTML=`<div class="report-wrap">
     <div class="rep-head">
       <div>
-        <div class="rep-co">${p.company?esc(p.company):'Build<span>Track</span>'}</div>
+        <div class="rep-co">${esc(REPORT_COMPANY_NAME)}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;">Contractor's Site Progress Report</div>
       </div>
       <div class="rep-meta">
