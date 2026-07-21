@@ -24,6 +24,9 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .auth-tab-btn{flex:1;min-height:44px;padding:10px;border:none;background:white;font-family:'Nunito Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--muted);}
 .auth-tab-btn.active{background:var(--accent);color:#1a1a1a;}
 .auth-tab-btn:not(.active):hover{background:var(--surface);}
+.auth-link-btn{border:0;background:transparent;padding:0;color:var(--accent2);font:700 12px 'Nunito Sans',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.auth-link-btn:hover{color:var(--accent2-d);}
+.reset-intro{font-size:12px;line-height:1.55;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:14px;}
 .role-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
 .role-card{border:2px solid var(--border);border-radius:10px;padding:11px 12px;min-height:56px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:all .15s;background:white;-webkit-tap-highlight-color:transparent;}
 .role-card:hover{border-color:var(--border2);background:var(--surface);}
@@ -489,12 +492,25 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <label for="login-email" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Email Address</label>
         <input type="email" id="login-email" placeholder="your@email.com" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="email">
       </div>
-      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;">
         <label for="login-pass" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Password</label>
         <input type="password" id="login-pass" placeholder="Password" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="current-password">
       </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:18px;"><button type="button" class="auth-link-btn" onclick="showResetForm()">Forgot password?</button></div>
       <button onclick="doLogin()" style="width:100%;padding:11px;background:var(--accent);border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">Sign In</button>
       <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">New to BuildTrack? <a href="#" onclick="showAuthTab('signup');return false;" style="color:var(--accent2);font-weight:700;">Create an account</a></p>
+    </div>
+
+    <!-- PASSWORD RESET FORM -->
+    <div id="form-reset" style="display:none;">
+      <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:800;margin-bottom:6px;">Reset your password</div>
+      <div class="reset-intro">Enter the email address registered with BuildTrack. Firebase will send you a secure link for choosing a new password.</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:18px;">
+        <label for="reset-email" style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);">Email Address</label>
+        <input type="email" id="reset-email" placeholder="your@email.com" style="padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;" autocomplete="email">
+      </div>
+      <button type="button" id="btn-reset-password" onclick="sendPasswordReset()" style="width:100%;padding:11px;background:var(--accent2);color:white;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">Send Reset Link</button>
+      <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);"><button type="button" class="auth-link-btn" onclick="showAuthTab('signin')">Back to sign in</button></p>
     </div>
 
     <!-- SIGN UP FORM -->
@@ -1528,11 +1544,52 @@ async function doLogin() {
   } catch(e) { errEl.textContent='Network error. Check your connection.'; errEl.style.display='block'; }
 }
 
+function showResetForm(){
+  document.getElementById('form-signin').style.display='none';
+  document.getElementById('form-signup').style.display='none';
+  document.getElementById('form-reset').style.display='';
+  document.querySelector('.auth-tabs').style.display='none';
+  const resetEmail=document.getElementById('reset-email');
+  resetEmail.value=document.getElementById('login-email').value.trim();
+  resetEmail.removeAttribute('aria-invalid');
+  const errEl=document.getElementById('login-err');
+  errEl.style.display='none';errEl.style.background='';errEl.style.color='';errEl.style.borderColor='';errEl.style.borderLeftColor='';
+  setTimeout(()=>resetEmail.focus(),0);
+}
+
+async function sendPasswordReset(){
+  const email=document.getElementById('reset-email').value.trim();
+  const errEl=document.getElementById('login-err');
+  const btn=document.getElementById('btn-reset-password');
+  errEl.style.display='none';
+  document.getElementById('reset-email').removeAttribute('aria-invalid');
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    errEl.textContent='Enter a valid email address.';errEl.style.display='block';
+    document.getElementById('reset-email').setAttribute('aria-invalid','true');document.getElementById('reset-email').focus();return;
+  }
+  btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const r=await fetch(`${FB_AUTH}:sendOobCode?key=${FB_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestType:'PASSWORD_RESET',email})});
+    const j=await r.json();
+    if(!r.ok&&j.error?.message!=='EMAIL_NOT_FOUND'){
+      const msg=j.error?.message||'';
+      errEl.textContent=msg.includes('INVALID_EMAIL')?'Enter a valid email address.':msg.includes('TOO_MANY_ATTEMPTS')?'Too many requests. Please wait and try again.':msg.includes('OPERATION_NOT_ALLOWED')?'Password resets are not enabled. Contact the administrator.':'Could not send the reset email. Please try again.';
+      errEl.style.display='block';return;
+    }
+    document.getElementById('login-email').value=email;
+    errEl.textContent='If an account exists for this email, a password-reset link has been sent. Check your inbox and spam folder.';
+    errEl.style.background='#f0fdf4';errEl.style.color='#166534';errEl.style.borderColor='#bbf7d0';errEl.style.borderLeftColor='#22c55e';errEl.style.display='block';
+  }catch(e){errEl.textContent='Network error. Check your connection and try again.';errEl.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='Send Reset Link';}
+}
+
 // ── Auth tab switching ──
 function showAuthTab(tab) {
   const isSignin = tab === 'signin';
   document.getElementById('form-signin').style.display = isSignin ? '' : 'none';
   document.getElementById('form-signup').style.display = isSignin ? 'none' : '';
+  document.getElementById('form-reset').style.display = 'none';
+  document.querySelector('.auth-tabs').style.display = '';
   document.getElementById('tab-signin').className = 'auth-tab-btn' + (isSignin ? ' active' : '');
   document.getElementById('tab-signup').className = 'auth-tab-btn' + (!isSignin ? ' active' : '');
   document.getElementById('login-err').style.display = 'none';
@@ -3442,6 +3499,7 @@ function renderReport(){
   // Allow Enter key to submit login
   document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+  document.getElementById('reset-email').addEventListener('keydown', e => { if(e.key==='Enter') sendPasswordReset(); });
 })();
 </script>
 </body>
