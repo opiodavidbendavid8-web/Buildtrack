@@ -223,7 +223,7 @@ body{font-family:'Nunito Sans',system-ui,sans-serif;background:var(--bg);color:v
 .report-builder-intro{background:#f8fafc;border:1px solid var(--border);border-left:4px solid var(--accent2);border-radius:10px;padding:12px 14px;margin-bottom:16px;color:var(--muted);font-size:12px;line-height:1.55;}
 .report-builder-section{border-top:1px solid var(--border);padding-top:16px;margin-top:16px;}
 .report-builder-section h4{font-family:'Syne',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--ink2);margin:0 0 12px;}
-.report-builder-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.report-builder-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
 .report-builder-summary div{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 12px;}
 .report-builder-summary strong{display:block;font-family:'Syne',sans-serif;font-size:18px;color:var(--ink);}
 .report-builder-summary span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
@@ -733,11 +733,12 @@ button:focus-visible,.btn:focus-visible,.nav-tab:focus-visible,.station-tab:focu
         <div><strong id="rb-completed-count">0</strong><span>Completed</span></div>
         <div><strong id="rb-ongoing-count">0</strong><span>Ongoing</span></div>
         <div><strong id="rb-upcoming-count">0</strong><span>Not Started</span></div>
+        <div><strong id="rb-photo-count">0</strong><span>Site Photos</span></div>
       </div>
       <div class="fg"><label>Report Subject</label><input type="text" id="rb-subject" placeholder="Weekly Progress Report"></div>
       <div class="fg2">
-        <div class="fg"><label>Period Start</label><input type="date" id="rb-period-start"></div>
-        <div class="fg"><label>Period End</label><input type="date" id="rb-period-end"></div>
+        <div class="fg"><label>Period Start</label><input type="date" id="rb-period-start" onchange="updateReportPhotoCount()"></div>
+        <div class="fg"><label>Period End</label><input type="date" id="rb-period-end" onchange="updateReportPhotoCount()"></div>
         <div class="fg"><label>Prepared By</label><input type="text" id="rb-prepared-by"></div>
         <div class="fg"><label>Job Title</label><input type="text" id="rb-prepared-title" placeholder="Project Manager / Site Foreman"></div>
       </div>
@@ -2131,12 +2132,47 @@ function openReportBuilder(){
   document.getElementById('rb-subject').value=draft.subject||`Progress Report — ${def.name}`;
   document.getElementById('rb-period-start').value=draft.periodStart||iso(start);
   document.getElementById('rb-period-end').value=draft.periodEnd||iso(end);
+  updateReportPhotoCount();
   document.getElementById('rb-prepared-by').value=draft.preparedBy||currentUser?.name||'';
   document.getElementById('rb-prepared-title').value=draft.preparedTitle||'';
   document.getElementById('rb-observations').value=draft.observations||'';
   document.getElementById('rb-risks').value=draft.risks||'';
   document.getElementById('rb-conclusion').value=draft.conclusion||'';
   openModal('modal-report-builder');
+}
+
+function updateReportPhotoCount(){
+  const periodStart=document.getElementById('rb-period-start')?.value||'';
+  const periodEnd=document.getElementById('rb-period-end')?.value||'';
+  const count=(state.logs||[]).filter(log=>(!periodStart||log.date>=periodStart)&&(!periodEnd||log.date<=periodEnd)).reduce((sum,log)=>sum+(log.photos||[]).length,0);
+  const el=document.getElementById('rb-photo-count');if(el)el.textContent=count;
+}
+
+function dataUrlToBytes(dataUrl){
+  const base64=String(dataUrl||'').split(',')[1]||'';
+  const binary=atob(base64); const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+
+function getImageSize(dataUrl){
+  return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve({width:img.naturalWidth||600,height:img.naturalHeight||400});img.onerror=()=>resolve({width:600,height:400});img.src=dataUrl;});
+}
+
+async function collectReportPhotos(reportDetails,maxPhotos=8){
+  const matchingLogs=(state.logs||[]).filter(log=>(!reportDetails.periodStart||log.date>=reportDetails.periodStart)&&(!reportDetails.periodEnd||log.date<=reportDetails.periodEnd));
+  const refs=matchingLogs.flatMap(log=>(log.photos||[]).map(photo=>({photo,log}))).slice(0,maxPhotos);
+  const photos=await Promise.all(refs.map(async({photo,log})=>{
+    let dataUrl=photo.dataUrl||'';
+    if(!dataUrl&&photo.id){try{dataUrl=(await fsGet('photos',photo.id))?.dataUrl||'';}catch(e){}}
+    dataUrl=dataUrl||photo.thumb||'';
+    if(!dataUrl||!dataUrl.startsWith('data:image/')) return null;
+    const size=await getImageSize(dataUrl);
+    const scale=Math.min(300/size.width,220/size.height,1);
+    const caption=[fmtDate(log.date),photo.name||'',log.workdone||''].filter(Boolean).join(' — ').slice(0,180);
+    return {data:dataUrlToBytes(dataUrl),width:Math.max(1,Math.round(size.width*scale)),height:Math.max(1,Math.round(size.height*scale)),caption};
+  }));
+  return {photos:photos.filter(Boolean),total:matchingLogs.reduce((sum,log)=>sum+(log.photos||[]).length,0)};
 }
 
 function getReportBuilderData(){
@@ -2155,8 +2191,9 @@ async function generateWordReport() {
   try {
     await loadScript('https://unpkg.com/docx@8.5.0/build/index.umd.js');
     if(!window.docx) throw new Error('The Word report library could not be loaded. Check your connection and try again.');
-    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,HeadingLevel,WidthType,BorderStyle,ShadingType,AlignmentType} = window.docx;
+    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,ImageRun,HeadingLevel,WidthType,BorderStyle,ShadingType,AlignmentType} = window.docx;
     const p=state.project||{}; const def=SITE_DEFS[activeSite];
+    const reportPhotoData=await collectReportPhotos(reportDetails);
     const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
     const bdr={style:BorderStyle.SINGLE,size:1,color:'DDDDDD'};
     const bdrs={top:bdr,bottom:bdr,left:bdr,right:bdr};
@@ -2253,6 +2290,18 @@ async function generateWordReport() {
       reportDetails.riskItems.forEach((item,i)=>children.push(par(`${i+1}. ${item}`,false,'C00000')));
     }
     if(reportDetails.conclusion){children.push(hdr('CONCLUSION'));children.push(par(reportDetails.conclusion));}
+
+    if(reportPhotoData.photos.length){
+      children.push(hdr('PHOTO GALLERY'));
+      const photoCells=reportPhotoData.photos.map(photo=>new TableCell({borders:bdrs,width:{size:4500,type:WidthType.DXA},margins:{top:120,bottom:120,left:120,right:120},children:[
+        new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:photo.data,transformation:{width:photo.width,height:photo.height}})]}),
+        new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:80},children:[new TextRun({text:photo.caption||'Site progress photo',font:'Arial',size:18,color:'475569'})]})
+      ]}));
+      const photoRows=[];
+      for(let i=0;i<photoCells.length;i+=2) photoRows.push(new TableRow({children:[photoCells[i],photoCells[i+1]||new TableCell({borders:bdrs,width:{size:4500,type:WidthType.DXA},children:[new Paragraph('')]})]}));
+      children.push(new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[4500,4500],rows:photoRows}));
+      if(reportPhotoData.total>reportPhotoData.photos.length) children.push(par(`Showing ${reportPhotoData.photos.length} of ${reportPhotoData.total} photos from this reporting period.`));
+    }
 
     // Signature
     children.push(new Paragraph({children:[],spacing:{after:400}}));
