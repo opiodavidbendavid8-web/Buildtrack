@@ -1583,7 +1583,10 @@ function startApp() {
   editBtns.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=currentUser.role==='client'?'none':'';});
   // Load correct site
   if (currentUser.site!=='all') activeSite = currentUser.site;
-  loadSite(activeSite).then(()=>{ renderStationTabs(); renderActivitiesPage(); });
+  loadSite(activeSite).then(async()=>{
+    if(state.archived) await leaveArchivedSite(activeSite);
+    else { renderStationTabs(); renderActivitiesPage(); }
+  });
 }
 
 function canEdit()    { return currentUser && currentUser.role !== 'client'; }
@@ -2231,6 +2234,7 @@ async function saveSite() {
     console.warn('Firestore save failed, kept in localStorage:', e);
     setSyncStatus('error');
   }
+  if(newlyArchived) await leaveArchivedSite(activeSite);
 }
 
 // ── Load site: Firestore first, localStorage fallback ──
@@ -2291,6 +2295,21 @@ async function switchSite(k) {
   await loadSite(k);
   renderStationTabs();
   renderActivitiesPage();
+}
+
+async function leaveArchivedSite(archivedSite) {
+  const nextSite=Object.keys(SITE_DEFS).find(k=>k!==archivedSite&&!getSiteData(k).archived);
+  if(nextSite){
+    activeSite=nextSite;
+    localStorage.setItem('bt_active',nextSite);
+    activeFilter='all';
+    await loadSite(nextSite);
+    renderStationTabs();
+    renderActivitiesPage();
+    return;
+  }
+  renderStationTabs();
+  openArchivedSites();
 }
 
 // ════════════════════════════════════════
@@ -2377,14 +2396,14 @@ function renderStationTabs(){
   const wrap = document.getElementById('station-tabs');
   const siteRows=Object.keys(SITE_DEFS).map(k=>({k,data:getSiteData(k)}));
   const archivedCount=siteRows.filter(row=>row.data.archived).length;
-  const activeTabs=siteRows.filter(row=>!row.data.archived||row.k===activeSite).map(({k,data:d})=>{
+  const activeTabs=siteRows.filter(row=>!row.data.archived).map(({k,data:d})=>{
     const def = SITE_DEFS[k];
     const pct = avgPct(d.works);
     const isActive = k===activeSite;
     return `<button type="button" class="station-tab ${isActive?'active':''}" ${isActive?'aria-current="true"':''} onclick="switchSite('${k}')" style="${isActive?'border-bottom-color:'+def.color:''}">
       <div class="station-dot" style="background:${def.color};${isActive?'':'opacity:.4'}"></div>
       <span>${def.name}</span>
-      <span class="station-pct" style="${isActive?'background:'+def.color+'22;color:'+def.color:''}">${d.archived?'Archived':pct+'%'}</span>
+      <span class="station-pct" style="${isActive?'background:'+def.color+'22;color:'+def.color:''}">${pct}%</span>
     </button>`;
   }).join('');
   wrap.innerHTML=activeTabs+(archivedCount?`<button type="button" class="station-tab archived-link" onclick="openArchivedSites()">Archived <span class="station-pct">${archivedCount}</span></button>`:'');
