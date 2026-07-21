@@ -2073,8 +2073,9 @@ async function generateWordReport() {
   const btn = document.getElementById('btn-word-report');
   btn.textContent='⏳ Generating…'; btn.disabled=true;
   try {
-    await loadScript('https://unpkg.com/docx@8.5.0/build/index.js');
-    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,HeadingLevel,WidthType,BorderStyle,ShadingType,AlignmentType} = docx;
+    await loadScript('https://unpkg.com/docx@8.5.0/build/index.umd.js');
+    if(!window.docx) throw new Error('The Word report library could not be loaded. Check your connection and try again.');
+    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,HeadingLevel,WidthType,BorderStyle,ShadingType,AlignmentType} = window.docx;
     const p=state.project||{}; const def=SITE_DEFS[activeSite];
     const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
     const bdr={style:BorderStyle.SINGLE,size:1,color:'DDDDDD'};
@@ -2167,7 +2168,7 @@ async function generateWordReport() {
     const a=document.createElement('a');a.href=url;a.download=def.name.replace(/\s+/g,'_')+'_Report_'+new Date().toISOString().slice(0,10)+'.docx';a.click();
     URL.revokeObjectURL(url);
   } catch(e){ console.error(e); showToast('Word report failed: '+e.message,'error'); }
-  finally{ btn.textContent='<span class="ico" data-ico="file"></span> Word Report'; btn.disabled=false; }
+  finally{ btn.innerHTML='<span class="ico" data-ico="file"></span> Word Report'; btn.disabled=false; }
 }
 
 // ════════════════════════════════════════
